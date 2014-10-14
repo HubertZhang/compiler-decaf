@@ -31,6 +31,7 @@ import java.util.*;
 %token LITERAL
 %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
 %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
+%token INCREASE DECREASE
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
 %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
 
@@ -40,6 +41,7 @@ import java.util.*;
 %nonassoc LESS_EQUAL GREATER_EQUAL '<' '>'
 %left  '+' '-'
 %left  '*' '/' '%'  
+%nonassoc INCREASE DECREASE
 %nonassoc UMINUS '!' 
 %nonassoc '[' '.' 
 %nonassoc ')' EMPTY
@@ -205,6 +207,10 @@ SimpleStmt      :	LValue '=' Expr
                 	{
                 		$$.stmt = new Tree.Exec($1.expr, $1.loc);
                 	}
+                |   Expr INCREASE
+                |   Expr DECREASE
+                |   INCREASE Expr
+                |   DECREASE Expr
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
@@ -246,6 +252,10 @@ Expr            :	LValue
 					}
                 |	Call
                 |	Constant
+                |   Expr INCREASE
+                |   Expr DECREASE
+                |   INCREASE Expr
+                |   DECREASE Expr
                 |	Expr '+' Expr
                 	{
                 		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
