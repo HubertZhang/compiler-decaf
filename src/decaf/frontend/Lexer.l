@@ -39,6 +39,7 @@ INTEGER				= ({HEX_INTEGER}|{DEC_INTEGER})
 IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
 SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
 S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
+B_COMMENT           = ("/*"~"*/")
 WHITESPACE			= ([ \t]+)
 
 	// 开始条件S表示字符串
@@ -49,7 +50,7 @@ WHITESPACE			= ([ \t]+)
 {WHITESPACE}		{ /* Just ignore */    }
 {NEWLINE}			{ /* Just ignore */    }
 {S_COMMENT}			{ /* Just ignore */    }
-
+{B_COMMENT}			{ /* Just ignore */    }
 
 	// 识别关键字的规则 
 "void"				{ return keyword(Parser.VOID);			}
