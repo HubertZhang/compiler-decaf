@@ -1,17 +1,11 @@
 package decaf.frontend;
 
-import java.util.List;
-
 import decaf.Location;
 import decaf.tree.Tree;
-import decaf.tree.Tree.ClassDef;
-import decaf.tree.Tree.Expr;
-import decaf.tree.Tree.MethodDef;
-import decaf.tree.Tree.LValue;
-import decaf.tree.Tree.TopLevel;
-import decaf.tree.Tree.VarDef;
-import decaf.tree.Tree.TypeLiteral;
+import decaf.tree.Tree.*;
 import decaf.utils.MiscUtils;
+
+import java.util.List;
 
 public class SemValue {
 
@@ -182,6 +176,21 @@ public class SemValue {
 		case Parser.STATIC:
 			msg = "keyword : static";
 			break;
+        case Parser.SWITCH:
+            msg = "keyword  : switch";
+            break;
+        case Parser.DEFAULT:
+            msg = "keyword : default";
+            break;
+        case Parser.CASE:
+            msg = "keyword  : case";
+            break;
+        case Parser.REPEAT:
+            msg = "keyword : repeat";
+            break;
+        case Parser.UNTIL:
+            msg = "keyword  : until";
+            break;
 
 		// 常量
 		case Parser.LITERAL:
@@ -219,6 +228,12 @@ public class SemValue {
 		case Parser.OR:
 			msg = "operator : ||";
 			break;
+        case Parser.DECREASE:
+            msg = "operator : --";
+            break;
+        case Parser.INCREASE:
+            msg = "operator : ++";
+            break;
 		default:
 			msg = "operator : " + (char) code;
 			break;
