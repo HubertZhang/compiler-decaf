@@ -34,7 +34,9 @@ import java.util.*;
 %token INCREASE DECREASE
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
 %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
+%token ':'  '?'
 
+%left ':'  '?'
 %left OR
 %left AND 
 %nonassoc EQUAL NOT_EQUAL
@@ -269,6 +271,10 @@ Expr            :	LValue
 					}
                 |	Call
                 |	Constant
+                |   Expr '?' Expr ':' Expr
+                    {
+                        $$.expr = new Tree.Ternary(Tree.CONDEXPR, $1.expr, $3.expr, $5.expr, $1.loc);
+                    }
                 |   OperatorExpr
                     {
                         $$.expr = $1.expr;

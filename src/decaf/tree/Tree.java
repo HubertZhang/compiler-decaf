@@ -973,6 +973,43 @@ public abstract class Tree {
     	}
     }
 
+    public static class Ternary extends Expr {
+        public Expr condition;
+        public Expr trueExpr;
+        public Expr falseExpr;
+
+        public Ternary(int kind, Expr condition, Expr trueExpr, Expr falseExpr, Location loc) {
+            super(kind, loc);
+            this.condition = condition;
+            this.trueExpr = trueExpr;
+            this.falseExpr = falseExpr;
+        }
+
+        private void ternaryOperatorPrintTo(IndentPrintWriter pw, String op) {
+            pw.println(op);
+            pw.incIndent();
+            condition.printTo(pw);
+            trueExpr.printTo(pw);
+            falseExpr.printTo(pw);
+            pw.decIndent();
+        }
+
+        @Override
+        public void accept(Visitor visitor) {
+            visitor.visitTernary(this);
+        }
+
+        @Override
+        public void printTo(IndentPrintWriter pw) {
+            switch (tag)
+            {
+                case CONDEXPR:
+                    ternaryOperatorPrintTo(pw, "cond");
+                    break;
+            }
+        }
+    }
+
     public static class CallExpr extends Expr {
 
     	public Expr receiver;
@@ -1399,6 +1436,10 @@ public abstract class Tree {
         }
 
         public void visitBinary(Binary that) {
+            visitTree(that);
+        }
+
+        public void visitTernary(Ternary that) {
             visitTree(that);
         }
 

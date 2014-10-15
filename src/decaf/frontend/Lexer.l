@@ -38,6 +38,7 @@ DEC_INTEGER			= ({DIGIT}+)
 INTEGER				= ({HEX_INTEGER}|{DEC_INTEGER})
 IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
 SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
+MULTIPLE_OPERATOR   = ("?"|":")
 S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
 B_COMMENT           = ("/*"~"*/")
 WHITESPACE			= ([ \t]+)
@@ -84,6 +85,7 @@ WHITESPACE			= ([ \t]+)
 "++"                { return operator(Parser.INCREASE);		}
 "--"                { return operator(Parser.DECREASE);		}
 {SIMPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
+{MULTIPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
 
 	// 识别常数的规则
 "true"				{ return boolConst(true);										}
