@@ -30,7 +30,7 @@ import java.util.*;
 %token PRINT  READ_INTEGER         READ_LINE
 %token LITERAL
 %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
-%token SWITCH CASE DEFAULT
+%token SWITCH CASE DEFAULT REPEAT UNTIL
 %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
 %token INCREASE DECREASE
 %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
@@ -201,6 +201,7 @@ Stmt		    :	VariableDef
                 |	BreakStmt ';'
                 |	StmtBlock
                 |   SwitchBlock
+                |   RepeatBlock
                 ;
 
 SimpleStmt      :	LValue '=' Expr
@@ -479,6 +480,12 @@ SwitchCaseList  :   SwitchCaseList SwitchCase
                 		$$ = new SemValue();
                 		$$.slist = new ArrayList<Tree>();
                 	}
+                ;
+
+RepeatBlock     :   REPEAT StmtBlock UNTIL '(' Expr ')' ';'
+                {
+                    $$.stmt = new Tree.Repeat($5.expr, $2.stmt, $1.loc);
+                }
                 ;
 %%
     

@@ -77,6 +77,8 @@ WHITESPACE			= ([ \t]+)
 "switch"            { return keyword(Parser.SWITCH);        }
 "case"              { return keyword(Parser.CASE);          }
 "default"           { return keyword(Parser.DEFAULT);       }
+"repeat"            { return keyword(Parser.REPEAT);        }
+"until"             { return keyword(Parser.UNTIL);         }
 
 	// 识别操作符的规则
 "<="				{ return operator(Parser.LESS_EQUAL);	}

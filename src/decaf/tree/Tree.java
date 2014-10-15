@@ -105,9 +105,14 @@ public abstract class Tree {
     public static final int CASE = SWITCH + 1;
 
     /**
+     * Repeat statements, of type Repeat.
+     */
+    public static final int REPEAT = CASE + 1;
+
+    /**
      * Synchronized statements, of type Synchonized.
      */
-    public static final int SYNCHRONIZED = CASE + 1;
+    public static final int SYNCHRONIZED = REPEAT + 1;
 
     /**
      * Try statements, of type Try.
@@ -675,6 +680,33 @@ public abstract class Tree {
             pw.incIndent();
             for (Tree t: caseList) t.printTo(pw);
             pw.decIndent();
+            pw.decIndent();
+        }
+    }
+
+    public static class Repeat extends Tree {
+
+        public Expr condition;
+        public Tree stmtBlock;
+
+        public Repeat(Expr condition, Tree stmtBlock,
+                      Location loc) {
+            super(REPEAT, loc);
+            this.condition = condition;
+            this.stmtBlock = stmtBlock;
+        }
+
+        @Override
+        public void accept(Visitor v) {
+            v.visitRepeat(this);
+        }
+
+        @Override
+        public void printTo(IndentPrintWriter pw) {
+            pw.println("repeat");
+            pw.incIndent();
+            stmtBlock.printTo(pw);
+            condition.printTo(pw);
             pw.decIndent();
         }
     }
@@ -1478,6 +1510,10 @@ public abstract class Tree {
         }
 
         public void visitSwitch(Switch that) {
+            visitTree(that);
+        }
+
+        public void visitRepeat(Repeat that) {
             visitTree(that);
         }
 
