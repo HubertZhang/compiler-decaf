@@ -609,6 +609,76 @@ public abstract class Tree {
     	}
     }
 
+    public static class SwitchCase extends Tree {
+        public Expr condition;
+        public List<Tree> slist;
+
+        public SwitchCase(Expr condition, List<Tree> slist,
+                           Location loc) {
+            super(CASE, loc);
+            this.condition = condition;
+            this.slist = slist;
+        }
+
+        @Override
+        public void accept(Visitor v) {
+            v.visitSwitchCase(this);
+        }
+
+        @Override
+        public void printTo(IndentPrintWriter pw) {
+            if (condition == null) {
+                pw.println("default");
+                pw.incIndent();
+            } else {
+                pw.println("case");
+                pw.incIndent();
+                condition.printTo(pw);
+            }
+            pw.println("caseblock");
+            pw.incIndent();
+            if (slist.size() == 0)
+            {
+                pw.println("<empty>");
+            }
+            for (Tree t : slist) {
+                t.printTo(pw);
+            }
+            pw.decIndent();
+            pw.decIndent();
+        }
+    }
+
+    public static class Switch extends Tree {
+
+        public Expr expr;
+        public List<Tree> caseList;
+
+        public Switch(Expr expr, List<Tree> caseList,
+                  Location loc) {
+            super(SWITCH, loc);
+            this.expr = expr;
+            this.caseList = caseList;
+        }
+
+        @Override
+        public void accept(Visitor v) {
+            v.visitSwitch(this);
+        }
+
+        @Override
+        public void printTo(IndentPrintWriter pw) {
+            pw.println("switch");
+            pw.incIndent();
+            expr.printTo(pw);
+            pw.println("switchblock");
+            pw.incIndent();
+            for (Tree t: caseList) t.printTo(pw);
+            pw.decIndent();
+            pw.decIndent();
+        }
+    }
+
     /**
       * an expression statement
       * @param expr expression structure
@@ -1400,6 +1470,14 @@ public abstract class Tree {
         }
 
         public void visitIf(If that) {
+            visitTree(that);
+        }
+
+        public void visitSwitchCase(SwitchCase that) {
+            visitTree(that);
+        }
+
+        public void visitSwitch(Switch that) {
             visitTree(that);
         }
 
