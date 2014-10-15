@@ -207,10 +207,10 @@ SimpleStmt      :	LValue '=' Expr
                 	{
                 		$$.stmt = new Tree.Exec($1.expr, $1.loc);
                 	}
-                |   Expr INCREASE
-                |   Expr DECREASE
-                |   INCREASE Expr
-                |   DECREASE Expr
+                |   OperatorExpr
+                    {
+                        $$.stmt = $1.expr;
+                    }
                 |	/* empty */
                 	{
                 		$$ = new SemValue();
@@ -246,16 +246,33 @@ Call            :	Receiver IDENTIFIER '(' Actuals ')'
 					}
                 ;
 
+OperatorExpr    :   Expr INCREASE
+                    {
+                        $$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $2.loc);
+                    }
+                |   Expr DECREASE
+                    {
+                        $$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $2.loc);
+                    }
+                |   INCREASE Expr
+                    {
+                        $$.expr = new Tree.Unary(Tree.PREINC, $2.expr, $1.loc);
+                    }
+                |   DECREASE Expr
+                    {
+                        $$.expr = new Tree.Unary(Tree.PREDEC, $2.expr, $1.loc);
+                    }
+
 Expr            :	LValue
 					{
 						$$.expr = $1.lvalue;
 					}
                 |	Call
                 |	Constant
-                |   Expr INCREASE
-                |   Expr DECREASE
-                |   INCREASE Expr
-                |   DECREASE Expr
+                |   OperatorExpr
+                    {
+                        $$.expr = $1.expr;
+                    }
                 |	Expr '+' Expr
                 	{
                 		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
