@@ -59,6 +59,12 @@ public final class Driver {
 
 	private void compile() {
 
+//        try {
+//            lexer.diagnose();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        parser.diagnose();
 		Tree.TopLevel tree = parser.parseFile();
 		checkPoint();
 		if (option.getLevel() == Option.Level.LEVEL0) {
