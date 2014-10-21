@@ -23,6 +23,7 @@ import decaf.utils.MiscUtils;
 	
 %{
 	private Location sloc = null;
+	private Location cloc = null;
 	private StringBuilder buffer = new StringBuilder();
 
 	public Location getLocation() {
@@ -40,18 +41,17 @@ IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
 SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
 MULTIPLE_OPERATOR   = ("?"|":")
 S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
-B_COMMENT           = ("/*"~"*/")
 WHITESPACE			= ([ \t]+)
 
 	// 开始条件S表示字符串
 %x S
+%x C
 
 %%
 	// 识别注释和空白字符的规则
 {WHITESPACE}		{ /* Just ignore */    }
 {NEWLINE}			{ /* Just ignore */    }
 {S_COMMENT}			{ /* Just ignore */    }
-{B_COMMENT}			{ /* Just ignore */    }
 
 	// 识别关键字的规则 
 "void"				{ return keyword(Parser.VOID);			}
@@ -109,6 +109,14 @@ WHITESPACE			= ([ \t]+)
 <S>"\\\""			{ buffer.append('"');											}
 <S>"\\\\"			{ buffer.append('\\'); 											}
 <S>.				{ buffer.append(yytext()); 										}
+
+    // 识别多行注释的规则
+<YYINITIAL>"/*"     { cloc = getLocation();
+                      yybegin(C);                                                   }
+<C>"\\*/"           { yybegin(YYINITIAL);}
+<C><<EOF>>          { issueError(new UntermMCError(cloc));yybegin(YYINITIAL);}
+<C>{NEWLINE}		{ /* Just ignore */    }
+<C>.				{ /* Just ignore */    }
 
 	// 识别标识符的规则
 {IDENTIFIER}		{ return identifier(yytext());			}
