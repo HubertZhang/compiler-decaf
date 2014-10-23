@@ -267,6 +267,7 @@ OperatorExpr    :   Expr INCREASE
                     {
                         $$.expr = new Tree.Unary(Tree.PREDEC, $2.expr, $1.loc);
                     }
+                ;
 
 Expr            :	LValue
 					{
@@ -482,9 +483,9 @@ SwitchCaseList  :   SwitchCaseList SwitchCase
                 	}
                 ;
 
-RepeatBlock     :   REPEAT StmtBlock UNTIL '(' Expr ')' ';'
+RepeatBlock     :   REPEAT Stmt UNTIL Expr  ';'
                 {
-                    $$.stmt = new Tree.Repeat($5.expr, $2.stmt, $1.loc);
+                    $$.stmt = new Tree.Repeat($4.expr, $2.stmt, $1.loc);
                 }
                 ;
 %%

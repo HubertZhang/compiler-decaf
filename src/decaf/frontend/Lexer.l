@@ -113,7 +113,7 @@ WHITESPACE			= ([ \t]+)
     // 识别多行注释的规则
 <YYINITIAL>"/*"     { cloc = getLocation();
                       yybegin(C);                                                   }
-<C>"\\*/"           { yybegin(YYINITIAL);}
+<C>"*/"             { yybegin(YYINITIAL);}
 <C><<EOF>>          { issueError(new UntermMCError(cloc));yybegin(YYINITIAL);}
 <C>{NEWLINE}		{ /* Just ignore */    }
 <C>.				{ /* Just ignore */    }
