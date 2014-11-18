@@ -54,20 +54,35 @@ public abstract class BaseParser {
 	 */
 	public static String opStr(int opCode) {
 		switch (opCode) {
-		case Parser.AND:
+		case Tree.AND:
 			return "&&";
-		case Parser.EQUAL:
+		case Tree.EQ:
 			return "==";
-		case Parser.GREATER_EQUAL:
+		case Tree.GE:
 			return ">=";
-		case Parser.LESS_EQUAL:
+		case Tree.LE:
 			return "<=";
-		case Parser.NOT_EQUAL:
+		case Tree.NE:
 			return "!=";
-		case Parser.OR:
+		case Tree.OR:
 			return "||";
+		case Tree.PLUS:
+			return "+";
+		case Tree.MINUS:
+		case Tree.NEG:
+			return "-";
+		case Tree.MUL:
+			return "*";
+		case Tree.DIV:
+			return "/";
+		case Tree.MOD:
+			return "%";
+		case Tree.GT:
+			return ">";
+		case Tree.LT:
+			return "<";
 		default:
-			return "" + (char) opCode;
+			return "unknow";
 		}
 	}
 }

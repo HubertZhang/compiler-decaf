@@ -2,7 +2,13 @@ package decaf.frontend;
 
 import decaf.Location;
 import decaf.tree.Tree;
-import decaf.tree.Tree.*;
+import decaf.tree.Tree.ClassDef;
+import decaf.tree.Tree.Expr;
+import decaf.tree.Tree.MethodDef;
+import decaf.tree.Tree.LValue;
+import decaf.tree.Tree.TopLevel;
+import decaf.tree.Tree.VarDef;
+import decaf.tree.Tree.TypeLiteral;
 import decaf.utils.MiscUtils;
 
 import java.util.List;
