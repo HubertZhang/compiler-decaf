@@ -10,6 +10,9 @@ import decaf.tree.Tree;
 import decaf.error.DecafError;
 import decaf.frontend.Lexer;
 import decaf.frontend.Parser;
+import decaf.scope.ScopeStack;
+import decaf.typecheck.BuildSym;
+import decaf.typecheck.TypeCheck;
 import decaf.utils.IndentPrintWriter;
 
 public final class Driver {
@@ -20,9 +23,15 @@ public final class Driver {
 
 	private List<DecafError> errors;
 
+	private ScopeStack table;
+
 	private Lexer lexer;
 
 	private Parser parser;
+
+	public ScopeStack getTable() {
+		return table;
+	}
 
 	public static Driver getDriver() {
 		return driver;
@@ -45,31 +54,36 @@ public final class Driver {
 			for (DecafError error : errors) {
 				option.getErr().println(error);
 			}
-			System.exit(1);
+			System.exit(0);
 		}
 	}
 
-	private void init() {
+	public void init() {
 		lexer = new Lexer(option.getInput());
 		parser = new Parser();
 		lexer.setParser(parser);
 		parser.setLexer(lexer);
 		errors = new ArrayList<DecafError>();
+		table = new ScopeStack();
 	}
 
-	private void compile() {
+	public void compile() {
 
-//        try {
-//            lexer.diagnose();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        parser.diagnose();
 		Tree.TopLevel tree = parser.parseFile();
 		checkPoint();
 		if (option.getLevel() == Option.Level.LEVEL0) {
 			IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
 			tree.printTo(pw);
+			pw.close();
+			return;
+		}
+		BuildSym.buildSymbol(tree);
+		checkPoint();
+		TypeCheck.checkType(tree);
+		checkPoint();
+		if (option.getLevel() == Option.Level.LEVEL1) {
+			IndentPrintWriter pw = new IndentPrintWriter(option.getOutput(), 4);
+			tree.globalScope.printTo(pw);
 			pw.close();
 			return;
 		}

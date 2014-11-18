@@ -21,11 +21,11 @@ public final class Option {
 
 	private PrintStream output = System.out;
 
-	private PrintStream err = System.err;
+	private PrintStream err = System.out;
 
 	private Level level = Level.LEVEL4;
 
-	private static final String mainClassName = "Main";
+	private String mainClassName = "Main";
 
 	private static final String mainFuncName = "main";
 
@@ -54,6 +54,8 @@ public final class Option {
 				}
 			} else if (args[i].equals("-l")) {
 				level = Level.valueOf("LEVEL" + args[++i]);
+			} else if (args[i].equals("-m")) {
+				mainClassName = args[++i];
 			} else {
 				srcFileName = args[i];
 				try {
@@ -69,7 +71,7 @@ public final class Option {
 
 	private String usage() {
 		return ("\n"
-				+ "Usage:  java -jar decaf.jar [-l LEVEL] [-o OUTPUT] SOURCE\n"
+				+ "Usage:  java -jar decaf.jar [-l LEVEL] [-o OUTPUT] [-m MAINCLASS] SOURCE\n"
 				+ "Options:\n"
 				+ "    -l  Developing level of the compiler, values of LEVEL are:  \n"
 				+ "        0  AST Construction                                     \n"
@@ -80,6 +82,7 @@ public final class Option {
 				+ "                                                                \n"
 				+ "    -o  Specifying the output file name. stdout if omitted.     \n"
 				+ "                                                                \n"
+				+ "    -m  Specifying the main class of the file. 'Main' if omitted\n"
 				+ "\n");
 	}
 

@@ -10,7 +10,6 @@
 	<!-- 设置各种属性 -->
 	<property name="src.dir" value="src" />
 	<property name="result.dir" value="result" />
-	<property name="test.dir"  value="TestCases/S1" />
 	<property name="bin.dir" value="${result.dir}/bin" />
 	<property name="doc.dir" value="${result.dir}/doc" />
 	<property name="jflex.jar" value="tools/jflex/JFlex.jar" />

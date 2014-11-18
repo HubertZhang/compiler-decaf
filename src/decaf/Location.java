@@ -5,7 +5,8 @@ package decaf;
  */
 public class Location implements Comparable<Location> {
 
-	public static final Location NO_LOCATION = new Location(-1, -1);
+	public static final Location NO_LOCATION = new Location(Integer.MAX_VALUE,
+			Integer.MAX_VALUE);
 	/**
 	 * 该符号第一个字符所在的行号
 	 */
@@ -32,7 +33,6 @@ public class Location implements Comparable<Location> {
 	/**
 	 * 转换成(x,y)形式的字符串
 	 */
-	@Override
 	public String toString() {
 		return "(" + line + "," + column + ")";
 	}
