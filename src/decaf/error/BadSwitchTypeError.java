@@ -17,7 +17,7 @@ public class BadSwitchTypeError extends DecafError {
 
     @Override
     protected String getErrMsg() {
-        return "incompatible switch: "+switchType+" given, int expected";
+        return "incompatible switch: "+switchType+" given,  int expected";
     }
 
 }
