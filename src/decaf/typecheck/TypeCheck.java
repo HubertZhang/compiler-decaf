@@ -582,7 +582,15 @@ public class TypeCheck extends Tree.Visitor {
         }
     }
 
-	// visiting types
+    @Override
+    public void visitRepeat(Tree.Repeat repeat) {
+        checkTestExpr(repeat.condition);
+        breaks.add(repeat);
+        repeat.stmtBlock.accept(this);
+        breaks.pop();
+    }
+
+    // visiting types
 	@Override
 	public void visitTypeIdent(Tree.TypeIdent type) {
 		switch (type.typeTag) {
