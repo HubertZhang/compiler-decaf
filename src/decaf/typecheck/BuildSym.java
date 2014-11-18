@@ -247,6 +247,11 @@ public class BuildSym extends Tree.Visitor {
         }
     }
 
+    @Override
+    public void visitRepeat(Tree.Repeat repeat) {
+        repeat.stmtBlock.accept(this);
+    }
+
 	private int calcOrder(Class c) {
 		if (c == null) {
 			return -1;
