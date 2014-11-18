@@ -233,6 +233,20 @@ public class BuildSym extends Tree.Visitor {
 		}
 	}
 
+    @Override
+    public void visitSwitchCase(Tree.SwitchCase switchCase) {
+        if (switchCase != null) {
+            visitBlock(switchCase);
+        }
+    }
+
+    @Override
+    public void visitSwitch(Tree.Switch switchBlock) {
+        for (Tree switchCase : switchBlock.caseList) {
+            switchCase.accept(this);
+        }
+    }
+
 	private int calcOrder(Class c) {
 		if (c == null) {
 			return -1;
