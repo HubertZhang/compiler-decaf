@@ -1,0 +1,805 @@
+From 4e1f7201a5491e737071774066f949515b2a982d Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Tue, 14 Oct 2014 22:06:34 +0800
+Subject: [PATCH] Add C-style comment
+
+---
+ src/decaf/frontend/Lexer.l | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index 9017875..dd93ea0 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -39,6 +39,7 @@ INTEGER				= ({HEX_INTEGER}|{DEC_INTEGER})
+ IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
+ SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
+ S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
++B_COMMENT           = ("/*"~"*/")
+ WHITESPACE			= ([ \t]+)
+ 
+ 	// 开始条件S表示字符串
+@@ -49,7 +50,7 @@ WHITESPACE			= ([ \t]+)
+ {WHITESPACE}		{ /* Just ignore */    }
+ {NEWLINE}			{ /* Just ignore */    }
+ {S_COMMENT}			{ /* Just ignore */    }
+-
++{B_COMMENT}			{ /* Just ignore */    }
+ 
+ 	// 识别关键字的规则 
+ "void"				{ return keyword(Parser.VOID);			}
+-- 
+1.8.4.2
+
+From 90ba7753392d74bb69c05c46aa87a0521ac26a6d Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 01:21:26 +0800
+Subject: [PATCH] Add "++", "--" operator
+
+---
+ src/decaf/frontend/Lexer.l  |  2 ++
+ src/decaf/frontend/Parser.y | 10 ++++++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index dd93ea0..c7fd4f6 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -81,6 +81,8 @@ WHITESPACE			= ([ \t]+)
+ "!="				{ return operator(Parser.NOT_EQUAL);	}
+ "&&"				{ return operator(Parser.AND);			}
+ "||"				{ return operator(Parser.OR);			}
++"++"                { return operator(Parser.INCREASE);		}
++"--"                { return operator(Parser.DECREASE);		}
+ {SIMPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
+ 
+ 	// 识别常数的规则
+diff --git a/src/decaf/frontend/Parser.y b/src/decaf/frontend/Parser.y
+index 4382012..32406c3 100755
+--- a/src/decaf/frontend/Parser.y
++++ b/src/decaf/frontend/Parser.y
+@@ -31,6 +31,7 @@ import java.util.*;
+ %token LITERAL
+ %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
+ %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
++%token INCREASE DECREASE
+ %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
+ %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
+ 
+@@ -40,6 +41,7 @@ import java.util.*;
+ %nonassoc LESS_EQUAL GREATER_EQUAL '<' '>'
+ %left  '+' '-'
+ %left  '*' '/' '%'  
++%nonassoc INCREASE DECREASE
+ %nonassoc UMINUS '!' 
+ %nonassoc '[' '.' 
+ %nonassoc ')' EMPTY
+@@ -205,6 +207,10 @@ SimpleStmt      :	LValue '=' Expr
+                 	{
+                 		$$.stmt = new Tree.Exec($1.expr, $1.loc);
+                 	}
++                |   Expr INCREASE
++                |   Expr DECREASE
++                |   INCREASE Expr
++                |   DECREASE Expr
+                 |	/* empty */
+                 	{
+                 		$$ = new SemValue();
+@@ -246,6 +252,10 @@ Expr            :	LValue
+ 					}
+                 |	Call
+                 |	Constant
++                |   Expr INCREASE
++                |   Expr DECREASE
++                |   INCREASE Expr
++                |   DECREASE Expr
+                 |	Expr '+' Expr
+                 	{
+                 		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
+-- 
+1.8.4.2
+
+From a0b08a79d40be1decdbfb77be3aaafa695731ed7 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 15:33:50 +0800
+Subject: [PATCH] Add tree node
+
+---
+ src/decaf/tree/Tree.java | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/decaf/tree/Tree.java b/src/decaf/tree/Tree.java
+index dbcd314..ee4a1ab 100755
+--- a/src/decaf/tree/Tree.java
++++ b/src/decaf/tree/Tree.java
+@@ -885,6 +885,17 @@ public abstract class Tree {
+     		case NOT:
+     			unaryOperatorToString(pw, "not");
+     			break;
++            case POSTINC:
++                unaryOperatorToString(pw, "postadd");
++                break;
++            case POSTDEC:
++                unaryOperatorToString(pw, "postminus");
++                break;
++            case PREINC:
++                unaryOperatorToString(pw, "preadd");
++                break;
++            case PREDEC:
++                unaryOperatorToString(pw, "preminus");
+ 			}
+     	}
+    }
+-- 
+1.8.4.2
+
+From 346c424dcb35313c0f4a2d95cdede4dc3b19b0c7 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 16:24:08 +0800
+Subject: [PATCH] Add a new class of operators ++, --
+
+---
+ src/decaf/frontend/Parser.y | 33 +++++++++++++++++++++++++--------
+ 1 file changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/src/decaf/frontend/Parser.y b/src/decaf/frontend/Parser.y
+index 32406c3..2f5397e 100755
+--- a/src/decaf/frontend/Parser.y
++++ b/src/decaf/frontend/Parser.y
+@@ -207,10 +207,10 @@ SimpleStmt      :	LValue '=' Expr
+                 	{
+                 		$$.stmt = new Tree.Exec($1.expr, $1.loc);
+                 	}
+-                |   Expr INCREASE
+-                |   Expr DECREASE
+-                |   INCREASE Expr
+-                |   DECREASE Expr
++                |   OperatorExpr
++                    {
++                        $$.stmt = $1.expr;
++                    }
+                 |	/* empty */
+                 	{
+                 		$$ = new SemValue();
+@@ -246,16 +246,33 @@ Call            :	Receiver IDENTIFIER '(' Actuals ')'
+ 					}
+                 ;
+ 
++OperatorExpr    :   Expr INCREASE
++                    {
++                        $$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $2.loc);
++                    }
++                |   Expr DECREASE
++                    {
++                        $$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $2.loc);
++                    }
++                |   INCREASE Expr
++                    {
++                        $$.expr = new Tree.Unary(Tree.PREINC, $2.expr, $1.loc);
++                    }
++                |   DECREASE Expr
++                    {
++                        $$.expr = new Tree.Unary(Tree.PREDEC, $2.expr, $1.loc);
++                    }
++
+ Expr            :	LValue
+ 					{
+ 						$$.expr = $1.lvalue;
+ 					}
+                 |	Call
+                 |	Constant
+-                |   Expr INCREASE
+-                |   Expr DECREASE
+-                |   INCREASE Expr
+-                |   DECREASE Expr
++                |   OperatorExpr
++                    {
++                        $$.expr = $1.expr;
++                    }
+                 |	Expr '+' Expr
+                 	{
+                 		$$.expr = new Tree.Binary(Tree.PLUS, $1.expr, $3.expr, $2.loc);
+-- 
+1.8.4.2
+
+From d2068a714b34536dba2d0fbbef64f95bd37614e0 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 16:35:04 +0800
+Subject: [PATCH] Add syntax A?B:C
+
+---
+ src/decaf/frontend/Lexer.l  |  2 ++
+ src/decaf/frontend/Parser.y |  6 ++++++
+ src/decaf/tree/Tree.java    | 41 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 49 insertions(+)
+
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index c7fd4f6..8d7a8ba 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -38,6 +38,7 @@ DEC_INTEGER			= ({DIGIT}+)
+ INTEGER				= ({HEX_INTEGER}|{DEC_INTEGER})
+ IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
+ SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
++MULTIPLE_OPERATOR   = ("?"|":")
+ S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
+ B_COMMENT           = ("/*"~"*/")
+ WHITESPACE			= ([ \t]+)
+@@ -84,6 +85,7 @@ WHITESPACE			= ([ \t]+)
+ "++"                { return operator(Parser.INCREASE);		}
+ "--"                { return operator(Parser.DECREASE);		}
+ {SIMPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
++{MULTIPLE_OPERATOR}	{ return operator((int)yycharat(0));	}
+ 
+ 	// 识别常数的规则
+ "true"				{ return boolConst(true);										}
+diff --git a/src/decaf/frontend/Parser.y b/src/decaf/frontend/Parser.y
+index 2f5397e..234cd4c 100755
+--- a/src/decaf/frontend/Parser.y
++++ b/src/decaf/frontend/Parser.y
+@@ -34,7 +34,9 @@ import java.util.*;
+ %token INCREASE DECREASE
+ %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
+ %token ','  ';'  '!'  '('  ')'  '['  ']'  '{'  '}'
++%token ':'  '?'
+ 
++%left ':'  '?'
+ %left OR
+ %left AND 
+ %nonassoc EQUAL NOT_EQUAL
+@@ -269,6 +271,10 @@ Expr            :	LValue
+ 					}
+                 |	Call
+                 |	Constant
++                |   Expr '?' Expr ':' Expr
++                    {
++                        $$.expr = new Tree.Ternary(Tree.CONDEXPR, $1.expr, $3.expr, $5.expr, $1.loc);
++                    }
+                 |   OperatorExpr
+                     {
+                         $$.expr = $1.expr;
+diff --git a/src/decaf/tree/Tree.java b/src/decaf/tree/Tree.java
+index ee4a1ab..7a4372a 100755
+--- a/src/decaf/tree/Tree.java
++++ b/src/decaf/tree/Tree.java
+@@ -973,6 +973,43 @@ public abstract class Tree {
+     	}
+     }
+ 
++    public static class Ternary extends Expr {
++        public Expr condition;
++        public Expr trueExpr;
++        public Expr falseExpr;
++
++        public Ternary(int kind, Expr condition, Expr trueExpr, Expr falseExpr, Location loc) {
++            super(kind, loc);
++            this.condition = condition;
++            this.trueExpr = trueExpr;
++            this.falseExpr = falseExpr;
++        }
++
++        private void ternaryOperatorPrintTo(IndentPrintWriter pw, String op) {
++            pw.println(op);
++            pw.incIndent();
++            condition.printTo(pw);
++            trueExpr.printTo(pw);
++            falseExpr.printTo(pw);
++            pw.decIndent();
++        }
++
++        @Override
++        public void accept(Visitor visitor) {
++            visitor.visitTernary(this);
++        }
++
++        @Override
++        public void printTo(IndentPrintWriter pw) {
++            switch (tag)
++            {
++                case CONDEXPR:
++                    ternaryOperatorPrintTo(pw, "cond");
++                    break;
++            }
++        }
++    }
++
+     public static class CallExpr extends Expr {
+ 
+     	public Expr receiver;
+@@ -1402,6 +1439,10 @@ public abstract class Tree {
+             visitTree(that);
+         }
+ 
++        public void visitTernary(Ternary that) {
++            visitTree(that);
++        }
++
+         public void visitCallExpr(CallExpr that) {
+             visitTree(that);
+         }
+-- 
+1.8.4.2
+
+From 8fc2f5c11ad8c37b5a584f5ee483c1df299f6b34 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 21:17:31 +0800
+Subject: [PATCH] Add switch...case...default syntax
+
+---
+ src/decaf/frontend/Lexer.l  |  3 ++
+ src/decaf/frontend/Parser.y | 28 ++++++++++++++++
+ src/decaf/tree/Tree.java    | 78 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 109 insertions(+)
+
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index 8d7a8ba..24cb148 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -74,6 +74,9 @@ WHITESPACE			= ([ \t]+)
+ "ReadLine"			{ return keyword(Parser.READ_LINE);		}
+ "static"			{ return keyword(Parser.STATIC);		}
+ "instanceof"		{ return keyword(Parser.INSTANCEOF);	}
++"switch"            { return keyword(Parser.SWITCH);        }
++"case"              { return keyword(Parser.CASE);          }
++"default"           { return keyword(Parser.DEFAULT);       }
+ 
+ 	// 识别操作符的规则
+ "<="				{ return operator(Parser.LESS_EQUAL);	}
+diff --git a/src/decaf/frontend/Parser.y b/src/decaf/frontend/Parser.y
+index 234cd4c..ba22b79 100755
+--- a/src/decaf/frontend/Parser.y
++++ b/src/decaf/frontend/Parser.y
+@@ -30,6 +30,7 @@ import java.util.*;
+ %token PRINT  READ_INTEGER         READ_LINE
+ %token LITERAL
+ %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
++%token SWITCH CASE DEFAULT
+ %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
+ %token INCREASE DECREASE
+ %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
+@@ -199,6 +200,7 @@ Stmt		    :	VariableDef
+                 |	PrintStmt ';'
+                 |	BreakStmt ';'
+                 |	StmtBlock
++                |   SwitchBlock
+                 ;
+ 
+ SimpleStmt      :	LValue '=' Expr
+@@ -452,6 +454,32 @@ PrintStmt       :	PRINT '(' ExprList ')'
+ 					}
+                 ;
+ 
++SwitchBlock     :   SWITCH '(' Expr ')' '{' SwitchCaseList '}'
++                {
++                    $$.stmt = new Tree.Switch($3.expr, $6.slist, $1.loc);
++                }
++                ;
++
++SwitchCase :   CASE Expr ':' StmtList
++                {
++                    $$.stmt = new Tree.SwitchCase($2.expr, $4.slist, $1.loc);
++                }
++                |   DEFAULT ':' StmtList
++                {
++                    $$.stmt = new Tree.SwitchCase(null, $3.slist, $1.loc);
++                }
++                ;
++
++SwitchCaseList  :   SwitchCaseList SwitchCase
++                {
++                    $$.slist.add($2.stmt);
++                }
++                |	/* empty */
++                	{
++                		$$ = new SemValue();
++                		$$.slist = new ArrayList<Tree>();
++                	}
++                ;
+ %%
+     
+ 	/**
+diff --git a/src/decaf/tree/Tree.java b/src/decaf/tree/Tree.java
+index 7a4372a..e39b7d5 100755
+--- a/src/decaf/tree/Tree.java
++++ b/src/decaf/tree/Tree.java
+@@ -609,6 +609,76 @@ public abstract class Tree {
+     	}
+     }
+ 
++    public static class SwitchCase extends Tree {
++        public Expr condition;
++        public List<Tree> slist;
++
++        public SwitchCase(Expr condition, List<Tree> slist,
++                           Location loc) {
++            super(CASE, loc);
++            this.condition = condition;
++            this.slist = slist;
++        }
++
++        @Override
++        public void accept(Visitor v) {
++            v.visitSwitchCase(this);
++        }
++
++        @Override
++        public void printTo(IndentPrintWriter pw) {
++            if (condition == null) {
++                pw.println("default");
++                pw.incIndent();
++            } else {
++                pw.println("case");
++                pw.incIndent();
++                condition.printTo(pw);
++            }
++            pw.println("caseblock");
++            pw.incIndent();
++            if (slist.size() == 0)
++            {
++                pw.println("<empty>");
++            }
++            for (Tree t : slist) {
++                t.printTo(pw);
++            }
++            pw.decIndent();
++            pw.decIndent();
++        }
++    }
++
++    public static class Switch extends Tree {
++
++        public Expr expr;
++        public List<Tree> caseList;
++
++        public Switch(Expr expr, List<Tree> caseList,
++                  Location loc) {
++            super(SWITCH, loc);
++            this.expr = expr;
++            this.caseList = caseList;
++        }
++
++        @Override
++        public void accept(Visitor v) {
++            v.visitSwitch(this);
++        }
++
++        @Override
++        public void printTo(IndentPrintWriter pw) {
++            pw.println("switch");
++            pw.incIndent();
++            expr.printTo(pw);
++            pw.println("switchblock");
++            pw.incIndent();
++            for (Tree t: caseList) t.printTo(pw);
++            pw.decIndent();
++            pw.decIndent();
++        }
++    }
++
+     /**
+       * an expression statement
+       * @param expr expression structure
+@@ -1403,6 +1473,14 @@ public abstract class Tree {
+             visitTree(that);
+         }
+ 
++        public void visitSwitchCase(SwitchCase that) {
++            visitTree(that);
++        }
++
++        public void visitSwitch(Switch that) {
++            visitTree(that);
++        }
++
+         public void visitExec(Exec that) {
+             visitTree(that);
+         }
+-- 
+1.8.4.2
+
+From 939a1329151cb3f560c1a8eb2d152b0a94847109 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 21:50:18 +0800
+Subject: [PATCH] Add repeat...until syntax
+
+---
+ src/decaf/frontend/Lexer.l  |  2 ++
+ src/decaf/frontend/Parser.y |  9 ++++++++-
+ src/decaf/tree/Tree.java    | 38 +++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 47 insertions(+), 2 deletions(-)
+
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index 24cb148..816766b 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -77,6 +77,8 @@ WHITESPACE			= ([ \t]+)
+ "switch"            { return keyword(Parser.SWITCH);        }
+ "case"              { return keyword(Parser.CASE);          }
+ "default"           { return keyword(Parser.DEFAULT);       }
++"repeat"            { return keyword(Parser.REPEAT);        }
++"until"             { return keyword(Parser.UNTIL);         }
+ 
+ 	// 识别操作符的规则
+ "<="				{ return operator(Parser.LESS_EQUAL);	}
+diff --git a/src/decaf/frontend/Parser.y b/src/decaf/frontend/Parser.y
+index ba22b79..bdccee2 100755
+--- a/src/decaf/frontend/Parser.y
++++ b/src/decaf/frontend/Parser.y
+@@ -30,7 +30,7 @@ import java.util.*;
+ %token PRINT  READ_INTEGER         READ_LINE
+ %token LITERAL
+ %token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
+-%token SWITCH CASE DEFAULT
++%token SWITCH CASE DEFAULT REPEAT UNTIL
+ %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
+ %token INCREASE DECREASE
+ %token '+'  '-'  '*'  '/'  '%'  '='  '>'  '<'  '.'
+@@ -201,6 +201,7 @@ Stmt		    :	VariableDef
+                 |	BreakStmt ';'
+                 |	StmtBlock
+                 |   SwitchBlock
++                |   RepeatBlock
+                 ;
+ 
+ SimpleStmt      :	LValue '=' Expr
+@@ -480,6 +481,12 @@ SwitchCaseList  :   SwitchCaseList SwitchCase
+                 		$$.slist = new ArrayList<Tree>();
+                 	}
+                 ;
++
++RepeatBlock     :   REPEAT StmtBlock UNTIL '(' Expr ')' ';'
++                {
++                    $$.stmt = new Tree.Repeat($5.expr, $2.stmt, $1.loc);
++                }
++                ;
+ %%
+     
+ 	/**
+diff --git a/src/decaf/tree/Tree.java b/src/decaf/tree/Tree.java
+index e39b7d5..5b6f8aa 100755
+--- a/src/decaf/tree/Tree.java
++++ b/src/decaf/tree/Tree.java
+@@ -105,9 +105,14 @@ public abstract class Tree {
+     public static final int CASE = SWITCH + 1;
+ 
+     /**
++     * Repeat statements, of type Repeat.
++     */
++    public static final int REPEAT = CASE + 1;
++
++    /**
+      * Synchronized statements, of type Synchonized.
+      */
+-    public static final int SYNCHRONIZED = CASE + 1;
++    public static final int SYNCHRONIZED = REPEAT + 1;
+ 
+     /**
+      * Try statements, of type Try.
+@@ -679,6 +684,33 @@ public abstract class Tree {
+         }
+     }
+ 
++    public static class Repeat extends Tree {
++
++        public Expr condition;
++        public Tree stmtBlock;
++
++        public Repeat(Expr condition, Tree stmtBlock,
++                      Location loc) {
++            super(REPEAT, loc);
++            this.condition = condition;
++            this.stmtBlock = stmtBlock;
++        }
++
++        @Override
++        public void accept(Visitor v) {
++            v.visitRepeat(this);
++        }
++
++        @Override
++        public void printTo(IndentPrintWriter pw) {
++            pw.println("repeat");
++            pw.incIndent();
++            stmtBlock.printTo(pw);
++            condition.printTo(pw);
++            pw.decIndent();
++        }
++    }
++
+     /**
+       * an expression statement
+       * @param expr expression structure
+@@ -1481,6 +1513,10 @@ public abstract class Tree {
+             visitTree(that);
+         }
+ 
++        public void visitRepeat(Repeat that) {
++            visitTree(that);
++        }
++
+         public void visitExec(Exec that) {
+             visitTree(that);
+         }
+-- 
+1.8.4.2
+
+From 68d42cfa2289665478ed00c27124671e1db3ed43 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 15 Oct 2014 21:51:41 +0800
+Subject: [PATCH] Add for debug
+
+---
+ src/decaf/Driver.java            |  6 ++++++
+ src/decaf/frontend/SemValue.java | 33 ++++++++++++++++++++++++---------
+ 2 files changed, 30 insertions(+), 9 deletions(-)
+
+diff --git a/src/decaf/Driver.java b/src/decaf/Driver.java
+index eeb5869..4d458f9 100755
+--- a/src/decaf/Driver.java
++++ b/src/decaf/Driver.java
+@@ -59,6 +59,12 @@ public final class Driver {
+ 
+ 	private void compile() {
+ 
++//        try {
++//            lexer.diagnose();
++//        } catch (IOException e) {
++//            e.printStackTrace();
++//        }
++//        parser.diagnose();
+ 		Tree.TopLevel tree = parser.parseFile();
+ 		checkPoint();
+ 		if (option.getLevel() == Option.Level.LEVEL0) {
+diff --git a/src/decaf/frontend/SemValue.java b/src/decaf/frontend/SemValue.java
+index 7a25aca..197b1fb 100755
+--- a/src/decaf/frontend/SemValue.java
++++ b/src/decaf/frontend/SemValue.java
+@@ -1,18 +1,12 @@
+ package decaf.frontend;
+ 
+-import java.util.List;
+-
+ import decaf.Location;
+ import decaf.tree.Tree;
+-import decaf.tree.Tree.ClassDef;
+-import decaf.tree.Tree.Expr;
+-import decaf.tree.Tree.MethodDef;
+-import decaf.tree.Tree.LValue;
+-import decaf.tree.Tree.TopLevel;
+-import decaf.tree.Tree.VarDef;
+-import decaf.tree.Tree.TypeLiteral;
++import decaf.tree.Tree.*;
+ import decaf.utils.MiscUtils;
+ 
++import java.util.List;
++
+ public class SemValue {
+ 
+ 	public int code;
+@@ -182,6 +176,21 @@ public class SemValue {
+ 		case Parser.STATIC:
+ 			msg = "keyword : static";
+ 			break;
++        case Parser.SWITCH:
++            msg = "keyword  : switch";
++            break;
++        case Parser.DEFAULT:
++            msg = "keyword : default";
++            break;
++        case Parser.CASE:
++            msg = "keyword  : case";
++            break;
++        case Parser.REPEAT:
++            msg = "keyword : repeat";
++            break;
++        case Parser.UNTIL:
++            msg = "keyword  : until";
++            break;
+ 
+ 		// 常量
+ 		case Parser.LITERAL:
+@@ -219,6 +228,12 @@ public class SemValue {
+ 		case Parser.OR:
+ 			msg = "operator : ||";
+ 			break;
++        case Parser.DECREASE:
++            msg = "operator : --";
++            break;
++        case Parser.INCREASE:
++            msg = "operator : ++";
++            break;
+ 		default:
+ 			msg = "operator : " + (char) code;
+ 			break;
+-- 
+1.8.4.2
+
+From 2318d6094a2f48c8b883a2867cf6305567482275 Mon Sep 17 00:00:00 2001
+From: Hubert Zhang <hubert.zyk@gmail.com>
+Date: Wed, 22 Oct 2014 01:25:51 +0800
+Subject: [PATCH] Modified multi line comment, add error for unterminated multi
+ line comment
+
+---
+ src/decaf/error/UntermMCError.java | 21 +++++++++++++++++++++
+ src/decaf/frontend/Lexer.l         | 12 ++++++++++--
+ 2 files changed, 31 insertions(+), 2 deletions(-)
+ create mode 100644 src/decaf/error/UntermMCError.java
+
+diff --git a/src/decaf/error/UntermMCError.java b/src/decaf/error/UntermMCError.java
+new file mode 100644
+index 0000000..2e3d837
+--- /dev/null
++++ b/src/decaf/error/UntermMCError.java
+@@ -0,0 +1,21 @@
++package decaf.error;
++
++import decaf.Location;
++
++/**
++ * example：unterminated multi comment
++ * PA1
++ */
++public class UntermMCError extends DecafError {
++
++
++    public UntermMCError(Location location) {
++        super(location);
++    }
++
++    @Override
++    protected String getErrMsg() {
++        return "unterminated multi comment";
++    }
++
++}
+diff --git a/src/decaf/frontend/Lexer.l b/src/decaf/frontend/Lexer.l
+index 816766b..2f781ec 100755
+--- a/src/decaf/frontend/Lexer.l
++++ b/src/decaf/frontend/Lexer.l
+@@ -23,6 +23,7 @@ import decaf.utils.MiscUtils;
+ 	
+ %{
+ 	private Location sloc = null;
++	private Location cloc = null;
+ 	private StringBuilder buffer = new StringBuilder();
+ 
+ 	public Location getLocation() {
+@@ -40,18 +41,17 @@ IDENTIFIER			= ([A-Za-z][_0-9A-Za-z]*)
+ SIMPLE_OPERATOR		= ("+"|"-"|"*"|"/"|"%"|"="|"<"|">"|"."|","|";"|"!"|"("|")"|"["|"]"|"{"|"}")
+ MULTIPLE_OPERATOR   = ("?"|":")
+ S_COMMENT			= ("//"[^\r\n]*{NEWLINE})
+-B_COMMENT           = ("/*"~"*/")
+ WHITESPACE			= ([ \t]+)
+ 
+ 	// 开始条件S表示字符串
+ %x S
++%x C
+ 
+ %%
+ 	// 识别注释和空白字符的规则
+ {WHITESPACE}		{ /* Just ignore */    }
+ {NEWLINE}			{ /* Just ignore */    }
+ {S_COMMENT}			{ /* Just ignore */    }
+-{B_COMMENT}			{ /* Just ignore */    }
+ 
+ 	// 识别关键字的规则 
+ "void"				{ return keyword(Parser.VOID);			}
+@@ -110,6 +110,14 @@ WHITESPACE			= ([ \t]+)
+ <S>"\\\\"			{ buffer.append('\\'); 											}
+ <S>.				{ buffer.append(yytext()); 										}
+ 
++    // 识别多行注释的规则
++<YYINITIAL>"/*"     { cloc = getLocation();
++                      yybegin(C);                                                   }
++<C>"\\*/"           { yybegin(YYINITIAL);}
++<C><<EOF>>          { issueError(new UntermMCError(cloc));yybegin(YYINITIAL);}
++<C>{NEWLINE}		{ /* Just ignore */    }
++<C>.				{ /* Just ignore */    }
++
+ 	// 识别标识符的规则
+ {IDENTIFIER}		{ return identifier(yytext());			}
+ 	
+-- 
+1.8.4.2
+
