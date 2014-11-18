@@ -462,7 +462,7 @@ SwitchBlock     :   SWITCH '(' Expr ')' '{' SwitchCaseList '}'
                 }
                 ;
 
-SwitchCase :   CASE Expr ':' StmtList
+SwitchCase :   CASE Constant ':' StmtList
                 {
                     $$.stmt = new Tree.SwitchCase($2.expr, $4.slist, $1.loc);
                 }

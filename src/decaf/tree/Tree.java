@@ -633,15 +633,14 @@ public abstract class Tree {
     	}
     }
 
-    public static class SwitchCase extends Tree {
+    public static class SwitchCase extends Block {
         public Expr condition;
-        public List<Tree> slist;
 
         public SwitchCase(Expr condition, List<Tree> slist,
                            Location loc) {
-            super(CASE, loc);
+            super(slist, loc);
+            this.tag = CASE;
             this.condition = condition;
-            this.slist = slist;
         }
 
         @Override
@@ -661,11 +660,11 @@ public abstract class Tree {
             }
             pw.println("caseblock");
             pw.incIndent();
-            if (slist.size() == 0)
+            if (block.size() == 0)
             {
                 pw.println("<empty>");
             }
-            for (Tree t : slist) {
+            for (Tree t : block) {
                 t.printTo(pw);
             }
             pw.decIndent();
