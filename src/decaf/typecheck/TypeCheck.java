@@ -6,31 +6,8 @@ import java.util.Stack;
 
 import decaf.Driver;
 import decaf.Location;
+import decaf.error.*;
 import decaf.tree.Tree;
-import decaf.error.BadArgCountError;
-import decaf.error.BadArgTypeError;
-import decaf.error.BadArrElementError;
-import decaf.error.BadLengthArgError;
-import decaf.error.BadLengthError;
-import decaf.error.BadNewArrayLength;
-import decaf.error.BadPrintArgError;
-import decaf.error.BadReturnTypeError;
-import decaf.error.BadTestExpr;
-import decaf.error.BreakOutOfLoopError;
-import decaf.error.ClassNotFoundError;
-import decaf.error.DecafError;
-import decaf.error.FieldNotAccessError;
-import decaf.error.FieldNotFoundError;
-import decaf.error.IncompatBinOpError;
-import decaf.error.IncompatUnOpError;
-import decaf.error.NotArrayError;
-import decaf.error.NotClassError;
-import decaf.error.NotClassFieldError;
-import decaf.error.NotClassMethodError;
-import decaf.error.RefNonStaticError;
-import decaf.error.SubNotIntError;
-import decaf.error.ThisInStaticFuncError;
-import decaf.error.UndeclVarError;
 import decaf.frontend.Parser;
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
@@ -114,6 +91,31 @@ public class TypeCheck extends Tree.Visitor {
         }
 	}
 
+    @Override
+    public void visitTernary(Tree.Ternary expr) {
+        expr.condition.accept(this);
+        expr.trueExpr.accept(this);
+        expr.falseExpr.accept(this);
+
+        checkTestExpr(expr.condition);
+        if (expr.trueExpr.type.equal(BaseType.ERROR) || expr.falseExpr.type.equal(BaseType.ERROR)) {
+            expr.type = BaseType.ERROR;
+            return;
+        }
+
+        if (expr.trueExpr.type.compatible(expr.falseExpr.type)) {
+            expr.type = expr.trueExpr.type;
+            return;
+        }
+        else if (expr.falseExpr.type.compatible(expr.trueExpr.type)) {
+            expr.type = expr.falseExpr.type;
+            return;
+        }
+        else {
+            expr.type = BaseType.ERROR;
+            issueError(new IncompatTreOpError(expr.loc, expr.trueExpr.type.toString(), expr.falseExpr.type.toString()));
+        }
+    }
 
 	@Override
 	public void visitLiteral(Tree.Literal literal) {
