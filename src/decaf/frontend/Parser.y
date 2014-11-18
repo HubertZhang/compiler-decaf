@@ -253,11 +253,11 @@ Call            :	Receiver IDENTIFIER '(' Actuals ')'
 
 OperatorExpr    :   Expr INCREASE
                     {
-                        $$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $2.loc);
+                        $$.expr = new Tree.Unary(Tree.POSTINC, $1.expr, $1.loc);
                     }
                 |   Expr DECREASE
                     {
-                        $$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $2.loc);
+                        $$.expr = new Tree.Unary(Tree.POSTDEC, $1.expr, $1.loc);
                     }
                 |   INCREASE Expr
                     {

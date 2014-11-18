@@ -68,25 +68,48 @@ public class TypeCheck extends Tree.Visitor {
 	@Override
 	public void visitUnary(Tree.Unary expr) {
 		expr.expr.accept(this);
-		if(expr.tag == Tree.NEG){
-			if (expr.expr.type.equal(BaseType.ERROR)
-					|| expr.expr.type.equal(BaseType.INT)) {
-				expr.type = expr.expr.type;
-			} else {
-				issueError(new IncompatUnOpError(expr.getLocation(), "-",
-						expr.expr.type.toString()));
-				expr.type = BaseType.ERROR;
-			}
-		}
-		else{
-			if (!(expr.expr.type.equal(BaseType.BOOL) || expr.expr.type
-					.equal(BaseType.ERROR))) {
-				issueError(new IncompatUnOpError(expr.getLocation(), "!",
-						expr.expr.type.toString()));
-			}
-			expr.type = BaseType.BOOL;
-		}
+        expr.type = BaseType.ERROR;
+        String selfOp = "";
+        switch (expr.tag) {
+            case Tree.NEG:
+                if (expr.expr.type.equal(BaseType.ERROR)
+                        || expr.expr.type.equal(BaseType.INT)) {
+                    expr.type = expr.expr.type;
+                } else {
+                    issueError(new IncompatUnOpError(expr.getLocation(), "-",
+                            expr.expr.type.toString()));
+                    expr.type = BaseType.ERROR;
+                }
+                break;
+            case Tree.NOT:
+                if (!(expr.expr.type.equal(BaseType.BOOL) || expr.expr.type
+                        .equal(BaseType.ERROR))) {
+                    issueError(new IncompatUnOpError(expr.getLocation(), "!",
+                            expr.expr.type.toString()));
+                }
+                expr.type = BaseType.BOOL;
+                break;
+            case Tree.POSTINC:
+            case Tree.PREINC:
+                if (!(expr.expr instanceof Tree.LValue)||(expr.expr.type!=BaseType.INT)) {
+                    issueError(new IncompatUnOpError(expr.getLocation(), "++",
+                            expr.expr.type.toString()));
+                }
+                expr.type = expr.expr.type;
+                break;
+            case Tree.POSTDEC:
+            case Tree.PREDEC:
+                if (!(expr.expr instanceof Tree.LValue)||(expr.expr.type!=BaseType.INT)) {
+                    issueError(new IncompatUnOpError(expr.getLocation(), "--",
+                            expr.expr.type.toString()));
+                }
+                expr.type = expr.expr.type;
+                break;
+            default:
+                issueError(new UnrecogCharError(expr.loc, '@'));
+        }
 	}
+
 
 	@Override
 	public void visitLiteral(Tree.Literal literal) {
