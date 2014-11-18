@@ -68,8 +68,6 @@ public class TypeCheck extends Tree.Visitor {
 	@Override
 	public void visitUnary(Tree.Unary expr) {
 		expr.expr.accept(this);
-        expr.type = BaseType.ERROR;
-        String selfOp = "";
         switch (expr.tag) {
             case Tree.NEG:
                 if (expr.expr.type.equal(BaseType.ERROR)
@@ -91,7 +89,10 @@ public class TypeCheck extends Tree.Visitor {
                 break;
             case Tree.POSTINC:
             case Tree.PREINC:
-                if (!(expr.expr instanceof Tree.LValue)||(expr.expr.type!=BaseType.INT)) {
+                if (!(expr.expr instanceof Tree.LValue)) {
+                    issueError(new BadLValueError(expr.getLocation(), "++"));
+                }
+                else if (expr.expr.type != BaseType.INT) {
                     issueError(new IncompatUnOpError(expr.getLocation(), "++",
                             expr.expr.type.toString()));
                 }
@@ -99,7 +100,10 @@ public class TypeCheck extends Tree.Visitor {
                 break;
             case Tree.POSTDEC:
             case Tree.PREDEC:
-                if (!(expr.expr instanceof Tree.LValue)||(expr.expr.type!=BaseType.INT)) {
+                if (!(expr.expr instanceof Tree.LValue)) {
+                    issueError(new BadLValueError(expr.getLocation(), "--"));
+                }
+                else if (expr.expr.type != BaseType.INT) {
                     issueError(new IncompatUnOpError(expr.getLocation(), "--",
                             expr.expr.type.toString()));
                 }
