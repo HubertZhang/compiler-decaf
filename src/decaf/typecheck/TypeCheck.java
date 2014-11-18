@@ -558,6 +558,30 @@ public class TypeCheck extends Tree.Visitor {
 		breaks.pop();
 	}
 
+    @Override
+    public void visitSwitchCase(Tree.SwitchCase switchCase) {
+        if (switchCase.condition != null) {
+            switchCase.condition.accept(this);
+            if (!(switchCase.condition instanceof Tree.Literal) || !(switchCase.condition.type == BaseType.INT)) {
+                issueError(new BadCaseTypeError(switchCase.condition.getLocation()));
+            }
+        }
+        breaks.add(switchCase);
+        visitBlock(switchCase);
+        breaks.pop();
+    }
+
+    @Override
+    public void visitSwitch(Tree.Switch switchBlock) {
+        switchBlock.expr.accept(this);
+        if (!switchBlock.expr.type.equal(BaseType.ERROR) && !switchBlock.expr.type.equal(BaseType.INT)) {
+            issueError(new BadSwitchTypeError(switchBlock.expr.getLocation(), switchBlock.expr.type.toString()));
+        }
+        for (Tree switchCase : switchBlock.caseList) {
+            switchCase.accept(this);
+        }
+    }
+
 	// visiting types
 	@Override
 	public void visitTypeIdent(Tree.TypeIdent type) {
