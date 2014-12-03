@@ -6,12 +6,15 @@ import decaf.tree.Tree.Block;
 import decaf.scope.ClassScope;
 import decaf.scope.FormalScope;
 import decaf.scope.Scope;
+import decaf.tac.Functy;
 import decaf.type.FuncType;
 import decaf.type.Type;
 
 public class Function extends Symbol {
 
 	private FormalScope associatedScope;
+
+	private Functy functy;
 
 	private boolean statik;
 
@@ -41,6 +44,14 @@ public class Function extends Symbol {
 
 	public void setOffset(int offset) {
 		this.offset = offset;
+	}
+
+	public Functy getFuncty() {
+		return functy;
+	}
+
+	public void setFuncty(Functy functy) {
+		this.functy = functy;
 	}
 
 	public Function(boolean statik, String name, Type returnType,

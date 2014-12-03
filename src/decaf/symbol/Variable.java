@@ -1,11 +1,22 @@
 package decaf.symbol;
 
 import decaf.Location;
+import decaf.tac.Temp;
 import decaf.type.Type;
 
 public class Variable extends Symbol {
 	
 	private int offset;
+	
+	private Temp temp;
+	
+	public Temp getTemp() {
+		return temp;
+	}
+
+	public void setTemp(Temp temp) {
+		this.temp = temp;
+	}
 
 	public int getOffset() {
 		return offset;

@@ -1,9 +1,14 @@
 package decaf.symbol;
 
+import java.util.Iterator;
+
 import decaf.Driver;
 import decaf.Location;
+import decaf.backend.OffsetCounter;
 import decaf.scope.ClassScope;
 import decaf.scope.GlobalScope;
+import decaf.tac.Label;
+import decaf.tac.VTable;
 import decaf.type.ClassType;
 
 public class Class extends Symbol {
@@ -21,6 +26,26 @@ public class Class extends Symbol {
 	private int numVar;
 
 	private int size;
+
+	private VTable vtable;
+
+	private Label newFuncLabel;
+
+	public Label getNewFuncLabel() {
+		return newFuncLabel;
+	}
+
+	public void setNewFuncLabel(Label newFuncLabel) {
+		this.newFuncLabel = newFuncLabel;
+	}
+
+	public VTable getVtable() {
+		return vtable;
+	}
+
+	public void setVtable(VTable vtable) {
+		this.vtable = vtable;
+	}
 
 	public int getSize() {
 		return size;
@@ -122,6 +147,44 @@ public class Class extends Symbol {
 
 	public void setCheck(boolean check) {
 		this.check = check;
+	}
+
+	public void resolveFieldOrder() {
+		if (numNonStaticFunc >= 0 && numVar >= 0) {
+			return;
+		}
+		if (parentName != null) {
+			Class parent = getParent();
+			parent.resolveFieldOrder();
+			numNonStaticFunc = parent.numNonStaticFunc;
+			numVar = parent.numVar;
+			size = parent.size;
+		} else {
+			numNonStaticFunc = 0;
+			numVar = 0;
+			size = OffsetCounter.POINTER_SIZE;
+		}
+
+		ClassScope ps = associatedScope.getParentScope();
+		Iterator<Symbol> iter = associatedScope.iterator();
+		while (iter.hasNext()) {
+			Symbol sym = iter.next();
+			if (sym.isVariable()) {
+				sym.setOrder(numVar++);
+				size += OffsetCounter.WORD_SIZE;
+			} else if (!((Function) sym).isStatik()) {
+				if (ps == null) {
+					sym.setOrder(numNonStaticFunc++);
+				} else {
+					Symbol s = ps.lookupVisible(sym.name);
+					if (s == null) {
+						sym.setOrder(numNonStaticFunc++);
+					} else {
+						sym.setOrder(s.getOrder());
+					}
+				}
+			}
+		}
 	}
 
 	@Override
