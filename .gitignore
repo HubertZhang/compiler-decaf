@@ -47,6 +47,7 @@ target
 #test cases
 TestCases/S1/output/
 TestCases/S2/output/
+TestCases/S3/output/
 
 #Submit files
 submit.zip
