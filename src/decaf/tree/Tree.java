@@ -13,6 +13,7 @@ import decaf.type.*;
 import decaf.scope.*;
 import decaf.symbol.*;
 import decaf.symbol.Class;
+import decaf.tac.Temp;
 import decaf.utils.IndentPrintWriter;
 import decaf.utils.MiscUtils;
 
@@ -832,6 +833,7 @@ public abstract class Tree {
     public abstract static class Expr extends Tree {
 
     	public Type type;
+    	public Temp val;
     	public boolean isClass;
     	public boolean usedForRef;
     	
