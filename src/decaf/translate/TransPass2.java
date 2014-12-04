@@ -429,6 +429,23 @@ public class TransPass2 extends Tree.Visitor {
         }
     }
 
+
+    @Override
+    public void visitRepeat(Tree.Repeat repeat) {
+        Label loop = Label.createLabel();
+        tr.genMark(loop);
+        Label exit = Label.createLabel();
+        loopExits.push(exit);
+        if (repeat.stmtBlock != null) {
+            repeat.stmtBlock.accept(this);
+        }
+        repeat.condition.accept(this);
+        tr.genBeqz(repeat.condition.val, loop);
+        tr.genBranch(exit);
+        loopExits.pop();
+        tr.genMark(exit);
+    }
+
     @Override
 	public void visitTypeTest(Tree.TypeTest typeTest) {
 		typeTest.instance.accept(this);
