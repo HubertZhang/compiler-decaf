@@ -190,6 +190,22 @@ public class TransPass2 extends Tree.Visitor {
 	}
 
 	@Override
+    public void visitTernary(Tree.Ternary expr) {
+        expr.condition.accept(this);
+        expr.trueExpr.accept(this);
+        expr.falseExpr.accept(this);
+        expr.val = Temp.createTempI4();
+        Label falseLabel = Label.createLabel();
+        tr.genBeqz(expr.condition.val, falseLabel);
+        tr.genAssign(expr.val, expr.trueExpr.val);
+        Label exit = Label.createLabel();
+        tr.genBranch(exit);
+        tr.genMark(falseLabel);
+        tr.genAssign(expr.val, expr.falseExpr.val);
+        tr.genMark(exit);
+    }
+
+    @Override
 	public void visitNull(Tree.Null nullExpr) {
 		nullExpr.val = tr.genLoadImm4(0);
 	}
