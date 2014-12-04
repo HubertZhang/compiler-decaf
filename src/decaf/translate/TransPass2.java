@@ -169,12 +169,24 @@ public class TransPass2 extends Tree.Visitor {
 	public void visitUnary(Tree.Unary expr) {
 		expr.expr.accept(this);
 		switch (expr.tag){
-		case Tree.NEG:
-			expr.val = tr.genNeg(expr.expr.val);
-			break;
-		default:
-			expr.val = tr.genLNot(expr.expr.val);
-		}
+		    case Tree.NEG:
+			    expr.val = tr.genNeg(expr.expr.val);
+			    break;
+            case Tree.POSTINC:
+                expr.val = tr.genPostInc(expr.expr.val);
+                break;
+            case Tree.POSTDEC:
+                expr.val = tr.genPostDec(expr.expr.val);
+                break;
+            case Tree.PREINC:
+                expr.val = tr.genPreInc(expr.expr.val);
+                break;
+            case Tree.PREDEC:
+                expr.val = tr.genPreDec(expr.expr.val);
+                break;
+            default:
+                expr.val = tr.genLNot(expr.expr.val);
+            }
 	}
 
 	@Override
