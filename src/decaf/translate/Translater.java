@@ -197,6 +197,42 @@ public class Translater {
 		return dst;
 	}
 
+    public Temp genPostInc(Temp src) {
+        Temp dst = Temp.createTempI4();
+        append(Tac.genAssign(dst, src));
+        Temp add = Temp.createTempI4();
+        append(Tac.genLoadImm4(add, Temp.createConstTemp(1)));
+        append(Tac.genAdd(src, src, add));
+        return dst;
+    }
+
+    public Temp genPostDec(Temp src) {
+        Temp dst = Temp.createTempI4();
+        append(Tac.genAssign(dst, src));
+        Temp add = Temp.createTempI4();
+        append(Tac.genLoadImm4(add, Temp.createConstTemp(1)));
+        append(Tac.genSub(src, src, add));
+        return dst;
+    }
+
+    public Temp genPreInc(Temp src) {
+        Temp dst = Temp.createTempI4();
+        Temp add = Temp.createTempI4();
+        append(Tac.genLoadImm4(add, Temp.createConstTemp(1)));
+        append(Tac.genAdd(src, src, add));
+        append(Tac.genAssign(dst, src));
+        return dst;
+    }
+
+    public Temp genPreDec(Temp src) {
+        Temp dst = Temp.createTempI4();
+        Temp add = Temp.createTempI4();
+        append(Tac.genLoadImm4(add, Temp.createConstTemp(1)));
+        append(Tac.genSub(src, src, add));
+        append(Tac.genAssign(dst, src));
+        return dst;
+    }
+
 	public Temp genLAnd(Temp src1, Temp src2) {
 		Temp dst = Temp.createTempI4();
 		append(Tac.genLAnd(dst, src1, src2));
