@@ -318,22 +318,6 @@ public class TypeCheck extends Tree.Visitor {
 	}
 
 	@Override
-	public void visitTypeTest(Tree.TypeTest instanceofExpr) {
-		instanceofExpr.instance.accept(this);
-		if (!instanceofExpr.instance.type.isClassType()) {
-			issueError(new NotClassError(instanceofExpr.instance.type
-					.toString(), instanceofExpr.getLocation()));
-		}
-		Class c = table.lookupClass(instanceofExpr.className);
-		instanceofExpr.symbol = c;
-		instanceofExpr.type = BaseType.BOOL;
-		if (c == null) {
-			issueError(new ClassNotFoundError(instanceofExpr.getLocation(),
-					instanceofExpr.className));
-		}
-	}
-
-	@Override
 	public void visitTypeCast(Tree.TypeCast cast) {
 		cast.expr.accept(this);
 		if (!cast.expr.type.isClassType()) {

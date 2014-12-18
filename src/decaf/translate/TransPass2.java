@@ -446,13 +446,6 @@ public class TransPass2 extends Tree.Visitor {
         tr.genMark(exit);
     }
 
-    @Override
-	public void visitTypeTest(Tree.TypeTest typeTest) {
-		typeTest.instance.accept(this);
-		typeTest.val = tr.genInstanceof(typeTest.instance.val,
-				typeTest.symbol);
-	}
-
 	@Override
 	public void visitTypeCast(Tree.TypeCast typeCast) {
 		typeCast.expr.accept(this);
