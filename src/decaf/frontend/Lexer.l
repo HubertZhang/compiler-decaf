@@ -73,7 +73,6 @@ WHITESPACE			= ([ \t]+)
 "ReadInteger"		{ return keyword(Parser.READ_INTEGER);	}
 "ReadLine"			{ return keyword(Parser.READ_LINE);		}
 "static"			{ return keyword(Parser.STATIC);		}
-"instanceof"		{ return keyword(Parser.INSTANCEOF);	}
 "switch"            { return keyword(Parser.SWITCH);        }
 "case"              { return keyword(Parser.CASE);          }
 "default"           { return keyword(Parser.DEFAULT);       }
