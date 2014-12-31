@@ -1260,6 +1260,36 @@ public abstract class Tree {
     }
 
     /**
+      * instanceof expression
+      */
+    public static class TypeTest extends Expr {
+    	
+    	public Expr instance;
+    	public String className;
+    	public Class symbol;
+
+        public TypeTest(Expr instance, String className, Location loc) {
+            super(TYPETEST, loc);
+    		this.instance = instance;
+    		this.className = className;
+        }
+
+    	@Override
+        public void accept(Visitor v) {
+            v.visitTypeTest(this);
+        }
+
+    	@Override
+    	public void printTo(IndentPrintWriter pw) {
+    		pw.println("instanceof");
+    		pw.incIndent();
+    		instance.printTo(pw);
+    		pw.println(className);
+    		pw.decIndent();
+    	}
+    }
+
+    /**
       * An array selection
       */
     public static class Indexed extends LValue {
@@ -1583,6 +1613,10 @@ public abstract class Tree {
         }
 
         public void visitTypeCast(TypeCast that) {
+            visitTree(that);
+        }
+
+        public void visitTypeTest(TypeTest that) {
             visitTree(that);
         }
 

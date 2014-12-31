@@ -29,7 +29,7 @@ import java.util.*;
 %token IF     ELSE        RETURN   BREAK   NEW
 %token PRINT  READ_INTEGER         READ_LINE
 %token LITERAL
-%token IDENTIFIER	  AND    OR    STATIC
+%token IDENTIFIER	  AND    OR    STATIC  INSTANCEOF
 %token SWITCH CASE DEFAULT REPEAT UNTIL
 %token LESS_EQUAL   GREATER_EQUAL  EQUAL   NOT_EQUAL
 %token INCREASE DECREASE
@@ -366,6 +366,10 @@ Expr            :	LValue
                 |	NEW Type '[' Expr ']'
                 	{
                 		$$.expr = new Tree.NewArray($2.type, $4.expr, $1.loc);
+                	}
+                |	INSTANCEOF '(' Expr ',' IDENTIFIER ')'
+                	{
+                		$$.expr = new Tree.TypeTest($3.expr, $5.ident, $1.loc);
                 	}
                 |	'(' CLASS IDENTIFIER ')' Expr
                 	{
