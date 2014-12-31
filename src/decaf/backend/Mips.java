@@ -345,6 +345,8 @@ public class Mips implements MachineDescription {
 			emit(null, ".data", null);
 			emit(null, ".align 2", null);
 			emit(vt.name, null, "virtual table");
+			emit(null, ".word " + (vt.parent == null ? "0" : vt.parent.name),
+					"parent");
 			emit(null, ".word " + getStringConstLabel(vt.className),
 					"class name");
 			for (Label l : vt.entries) {
