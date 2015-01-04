@@ -19,6 +19,8 @@ public class Tac {
 
 	public Tac next;
 
+	private int lineNumber = -1;
+
 	public Temp op0;
 
 	public Temp op1;
@@ -36,6 +38,8 @@ public class Tac {
 	public Set<Temp> liveOut;
 	
 	public Set<Temp> saves;
+
+	public Set<Tac> useChaining;
 
 	private Tac(Kind opc, Temp op0) {
 		this(opc, op0, null, null);
@@ -308,6 +312,20 @@ public class Tac {
 			return "parm " + op0.name;
 		default:
 			throw new RuntimeException("unknown opc");
+		}
+	}
+
+	public int getLineNumber() {
+		if (lineNumber != -1) {
+			return lineNumber;
+		} else {
+			if (this.prev == null) {
+				lineNumber = 1;
+				return lineNumber;
+			} else {
+				lineNumber = this.prev.getLineNumber() + 1;
+				return lineNumber;
+			}
 		}
 	}
 }
