@@ -1,5 +1,6 @@
 package decaf.tac;
 
+import java.util.Map;
 import java.util.Set;
 
 import decaf.utils.MiscUtils;
@@ -36,7 +37,7 @@ public class Tac {
 	public int bbNum;
 
 	public Set<Temp> liveOut;
-	
+
 	public Set<Temp> saves;
 
 	private Tac(Kind opc, Temp op0) {

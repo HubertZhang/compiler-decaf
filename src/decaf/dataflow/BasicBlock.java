@@ -40,9 +40,9 @@ public class BasicBlock {
 
 	public Set<Map.Entry<Tac, Temp>> liveUse;
 
-	public Set<Temp> setDef;
+	public Set<Map.Entry<Tac, Temp>> LiveIn;
 
-	public Set<Temp> setLiveUse;
+	public Set<Map.Entry<Tac, Temp>> LiveOut;
 
 	public Set<Temp> liveIn;
 
@@ -68,10 +68,8 @@ public class BasicBlock {
 	public BasicBlock() {
 		def = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
 		liveUse = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
-		setDef = new TreeSet<Temp>(Temp.ID_COMPARATOR);
-		setLiveUse = new TreeSet<Temp>(Temp.ID_COMPARATOR);
-		liveIn = new TreeSet<Temp>(Temp.ID_COMPARATOR);
-		liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		LiveIn = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
+		LiveOut = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
 		next = new int[2];
 		asms = new ArrayList<Asm>();
 	}
@@ -161,13 +159,7 @@ public class BasicBlock {
 			liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(varTac, var));
 			var.lastVisitedBB = bbNum;
 		}
-		for (Map.Entry<Tac, Temp> t : liveUse) {
-			setLiveUse.add(t.getValue());
-		}
-		liveIn.addAll(setLiveUse);
-		for (Map.Entry<Tac, Temp> t : def) {
-			setDef.add(t.getValue());
-		}
+		LiveIn.addAll(liveUse);
 	}
 
 	public void analyzeLiveness() {
@@ -175,7 +167,7 @@ public class BasicBlock {
 			return;
 		Tac tac = tacList;
 		for (; tac.next != null; tac = tac.next); 
-
+		convertTempSet();
 		tac.liveOut = new HashSet<Temp> (liveOut);
 		if (var != null)
 			tac.liveOut.add (var);
@@ -236,7 +228,7 @@ public class BasicBlock {
 	}
 
 	public void analyzeDU() {
-
+		
 	}
 
 	public void printTo(PrintWriter pw) {
@@ -268,13 +260,13 @@ public class BasicBlock {
 
 	public void printLivenessTo(PrintWriter pw) {
 		pw.println("BASIC BLOCK " + bbNum + " : ");
-		pw.println("  Def     = " + toString(setDef));
-		pw.println("  liveUse = " + toString(setLiveUse));
-		pw.println("  liveIn  = " + toString(liveIn));
-		pw.println("  liveOut = " + toString(liveOut));
+		pw.println("  Def     = " + toString(def));
+		pw.println("  liveUse = " + toString(liveUse));
+		pw.println("  liveIn  = " + toString(LiveIn));
+		pw.println("  liveOut = " + toString(LiveOut));
 
 		for (Tac t = tacList; t != null; t = t.next) {
-			pw.println("    " + t + " " + toString(t.liveOut));
+			pw.println("    " + t + " " + oriToString(t.liveOut));
 		}
 
 		switch (endKind) {
@@ -303,7 +295,16 @@ public class BasicBlock {
 
 	}
 
-	public String toString(Set<Temp> set) {
+	public String toString(Set<Map.Entry<Tac, Temp>> set) {
+		StringBuilder sb = new StringBuilder("[ ");
+		for (Map.Entry<Tac, Temp> t : set) {
+			sb.append(t.getValue().name + " ");
+		}
+		sb.append(']');
+		return sb.toString();
+	}
+
+	public String oriToString(Set<Temp> set) {
 		StringBuilder sb = new StringBuilder("[ ");
 		for (Temp t : set) {
 			sb.append(t.name + " ");
@@ -343,5 +344,16 @@ public class BasicBlock {
 
 	public List<Asm> getAsms() {
 		return asms;
+	}
+
+	public void convertTempSet() {
+		liveIn = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		for (Map.Entry<Tac, Temp> t : LiveOut) {
+			liveOut.add(t.getValue());
+		}
+		for (Map.Entry<Tac, Temp> t : LiveIn) {
+			liveIn.add(t.getValue());
+		}
 	}
 }

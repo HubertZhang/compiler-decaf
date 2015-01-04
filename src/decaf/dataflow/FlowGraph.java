@@ -10,7 +10,6 @@ import java.util.Map;
 import decaf.tac.Functy;
 import decaf.tac.Tac;
 import decaf.tac.Tac.Kind;
-import decaf.tac.Temp;
 
 public class FlowGraph implements Iterable<BasicBlock> {
 
@@ -181,16 +180,19 @@ public class FlowGraph implements Iterable<BasicBlock> {
 			changed = false;
 			for (BasicBlock bb: bbs) {
 				for (int i = 0; i < 2; i++) {
-					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
+					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 				}
-				bb.liveOut.removeAll(bb.setDef);
-				if (bb.liveIn.addAll (bb.liveOut))
+				bb.LiveOut.removeAll(bb.def);
+				if (bb.LiveIn.addAll (bb.LiveOut))
 					changed = true;
 				for (int i = 0; i < 2; i++) {
-					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
+					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 				}
 			}
 		} while (changed);
+		for (BasicBlock bb: bbs) {
+			bb.convertTempSet();
+		}
 	}
 
 	public void simplify() {
