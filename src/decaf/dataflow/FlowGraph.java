@@ -10,6 +10,7 @@ import java.util.Map;
 import decaf.tac.Functy;
 import decaf.tac.Tac;
 import decaf.tac.Tac.Kind;
+import decaf.tac.Temp;
 
 public class FlowGraph implements Iterable<BasicBlock> {
 
@@ -121,6 +122,7 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				switch (end.opc) {
 				case RETURN:
 					current.endKind = BasicBlock.EndKind.BY_RETURN;
+					current.varTac = end;
 					current.var = end.op0;
 					end = end.prev;
 					break;
@@ -133,6 +135,7 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				case BNEZ:
 					current.endKind = end.opc == Kind.BEQZ ? BasicBlock.EndKind.BY_BEQZ
 							: BasicBlock.EndKind.BY_BNEZ;
+					current.varTac = end;
 					current.var = end.op0;
 					current.next[0] = end.label.where.bbNum;
 					current.next[1] = nextStart.bbNum;
@@ -180,7 +183,9 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				for (int i = 0; i < 2; i++) {
 					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
 				}
-				bb.liveOut.removeAll(bb.def);
+				for (Map.Entry<Tac, Temp> t : bb.def.entrySet()) {
+					bb.liveOut.remove(t.getValue());
+				}
 				if (bb.liveIn.addAll (bb.liveOut))
 					changed = true;
 				for (int i = 0; i < 2; i++) {
@@ -268,6 +273,13 @@ public class FlowGraph implements Iterable<BasicBlock> {
 		pw.println("FUNCTION " + functy.label.name + " : ");
 		for (BasicBlock bb : bbs) {
 			bb.printLivenessTo(pw);
+		}
+	}
+
+	public void printDUTo(PrintWriter pw) {
+		pw.println("FUNCTION " + functy.label.name + " : ");
+		for (BasicBlock bb : bbs) {
+			bb.printDUTo(pw);
 		}
 	}
 
