@@ -1,15 +1,12 @@
 package decaf.dataflow;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import decaf.tac.Functy;
 import decaf.tac.Tac;
 import decaf.tac.Tac.Kind;
+import decaf.tac.Temp;
 
 public class FlowGraph implements Iterable<BasicBlock> {
 
@@ -27,6 +24,9 @@ public class FlowGraph implements Iterable<BasicBlock> {
 		analyzeLiveness();
 		for (BasicBlock bb : bbs) {
 			bb.analyzeLiveness();
+		}
+		for (BasicBlock bb : bbs) {
+			bb.analyzeDU();
 		}
 	}
 
@@ -121,6 +121,7 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				switch (end.opc) {
 				case RETURN:
 					current.endKind = BasicBlock.EndKind.BY_RETURN;
+					current.varTac = end;
 					current.var = end.op0;
 					end = end.prev;
 					break;
@@ -133,6 +134,7 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				case BNEZ:
 					current.endKind = end.opc == Kind.BEQZ ? BasicBlock.EndKind.BY_BEQZ
 							: BasicBlock.EndKind.BY_BNEZ;
+					current.varTac = end;
 					current.var = end.op0;
 					current.next[0] = end.label.where.bbNum;
 					current.next[1] = nextStart.bbNum;
@@ -179,11 +181,22 @@ public class FlowGraph implements Iterable<BasicBlock> {
 			for (BasicBlock bb: bbs) {
 				for (int i = 0; i < 2; i++) {
 					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
+					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 				}
 				bb.liveOut.removeAll(bb.def);
+				Set<Map.Entry<Tac,Temp>> tempSet = new TreeSet<Map.Entry<Tac,Temp>>(BasicBlock.TAC_ID_COMPARATOR);
+				for (Map.Entry<Tac, Temp> t : bb.LiveOut) {
+					if (bb.def.contains(t.getValue())) {
+						tempSet.add(t);
+					}
+				}
+				bb.LiveOut.removeAll(tempSet);
+				if (bb.LiveIn.addAll (bb.LiveOut))
+					changed = true;
 				if (bb.liveIn.addAll (bb.liveOut))
 					changed = true;
 				for (int i = 0; i < 2; i++) {
+					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
 				}
 			}
@@ -268,6 +281,13 @@ public class FlowGraph implements Iterable<BasicBlock> {
 		pw.println("FUNCTION " + functy.label.name + " : ");
 		for (BasicBlock bb : bbs) {
 			bb.printLivenessTo(pw);
+		}
+	}
+
+	public void printDUTo(PrintWriter pw) {
+		pw.println("FUNCTION " + functy.label.name + " : ");
+		for (BasicBlock bb : bbs) {
+			bb.printDUTo(pw);
 		}
 	}
 
