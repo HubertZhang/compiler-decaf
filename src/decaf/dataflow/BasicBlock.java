@@ -3,7 +3,6 @@ package decaf.dataflow;
 import java.io.PrintWriter;
 import java.util.*;
 
-import com.sun.tools.javac.util.Pair;
 import decaf.machdesc.Asm;
 import decaf.machdesc.Register;
 import decaf.tac.Label;
@@ -37,9 +36,13 @@ public class BasicBlock {
 
 	public boolean mark;
 
-	public Map<Tac, Temp> def;
+	public Set<Map.Entry<Tac, Temp>> def;
 
-	public Map<Tac, Temp> liveUse;
+	public Set<Map.Entry<Tac, Temp>> liveUse;
+
+	public Set<Temp> setDef;
+
+	public Set<Temp> setLiveUse;
 
 	public Set<Temp> liveIn;
 
@@ -49,18 +52,24 @@ public class BasicBlock {
 
 	private List<Asm> asms;
 
-	public static final Comparator<Tac> TAC_COMPARATOR = new Comparator<Tac>() {
+	public static final Comparator<Map.Entry<Tac, Temp>> TAC_ID_COMPARATOR = new Comparator<Map.Entry<Tac, Temp>>() {
 
 		@Override
-		public int compare(Tac o1, Tac o2) {
-			return o1.getLineNumber() > o2.getLineNumber() ? 1 : o1.getLineNumber() == o2.getLineNumber() ? 0 : -1;
+		public int compare(Map.Entry<Tac, Temp> o1, Map.Entry<Tac, Temp> o2) {
+			if (o1.getKey().getLineNumber() == o2.getKey().getLineNumber()) {
+				return o1.getValue().id > o2.getValue().id ? 1 : o1.getValue().id == o2.getValue().id ? 0 : -1;
+			} else {
+				return o1.getKey().getLineNumber() > o2.getKey().getLineNumber() ? 1 : -1;
+			}
 		}
 
 	};
 
 	public BasicBlock() {
-		def = new TreeMap<Tac, Temp>(TAC_COMPARATOR);
-		liveUse = new TreeMap<Tac, Temp>(TAC_COMPARATOR);
+		def = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
+		liveUse = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
+		setDef = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		setLiveUse = new TreeSet<Temp>(Temp.ID_COMPARATOR);
 		liveIn = new TreeSet<Temp>(Temp.ID_COMPARATOR);
 		liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
 		next = new int[2];
@@ -85,15 +94,15 @@ public class BasicBlock {
 			case LES:
 				/* use op1 and op2, def op0 */
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op1);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				if (tac.op2.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op2);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op2));
 					tac.op2.lastVisitedBB = bbNum;
 				}
 				if (tac.op0.lastVisitedBB != bbNum) {
-					def.put(tac, tac.op0);
+					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -104,12 +113,12 @@ public class BasicBlock {
 			case LOAD:
 				/* use op1, def op0 */
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op1);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				if (tac.op0 != null && tac.op0.lastVisitedBB != bbNum) {  // in INDIRECT_CALL with return type VOID,
 					// tac.op0 is null
-					def.put(tac, tac.op0);
+					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -121,25 +130,25 @@ public class BasicBlock {
 				/* def op0 */
 				if (tac.op0 != null && tac.op0.lastVisitedBB != bbNum) {  // in DIRECT_CALL with return type VOID,
 					// tac.op0 is null
-					def.put(tac, tac.op0);
+					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
 			case STORE:
 				/* use op0 and op1*/
 				if (tac.op0.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op0);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op1);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				break;
 			case PARM:
 				/* use op0 */
 				if (tac.op0.lastVisitedBB != bbNum) {
-					liveUse.put(tac, tac.op0);
+					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -149,11 +158,15 @@ public class BasicBlock {
 			}
 		}
 		if (var != null && var.lastVisitedBB != bbNum) {
-			liveUse.put(varTac, var);
+			liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(varTac, var));
 			var.lastVisitedBB = bbNum;
 		}
-		for (Map.Entry<Tac, Temp> t : liveUse.entrySet()) {
-			liveIn.add(t.getValue());
+		for (Map.Entry<Tac, Temp> t : liveUse) {
+			setLiveUse.add(t.getValue());
+		}
+		liveIn.addAll(setLiveUse);
+		for (Map.Entry<Tac, Temp> t : def) {
+			setDef.add(t.getValue());
 		}
 	}
 
@@ -161,7 +174,7 @@ public class BasicBlock {
 		if (tacList == null)
 			return;
 		Tac tac = tacList;
-		for (; tac.next != null; tac = tac.next);
+		for (; tac.next != null; tac = tac.next); 
 
 		tac.liveOut = new HashSet<Temp> (liveOut);
 		if (var != null)
@@ -255,8 +268,8 @@ public class BasicBlock {
 
 	public void printLivenessTo(PrintWriter pw) {
 		pw.println("BASIC BLOCK " + bbNum + " : ");
-		pw.println("  Def     = " + toString(def));
-		pw.println("  liveUse = " + toString(liveUse));
+		pw.println("  Def     = " + toString(setDef));
+		pw.println("  liveUse = " + toString(setLiveUse));
 		pw.println("  liveIn  = " + toString(liveIn));
 		pw.println("  liveOut = " + toString(liveOut));
 
@@ -288,15 +301,6 @@ public class BasicBlock {
 
 	public void printDUTo(PrintWriter pw) {
 
-	}
-
-	public String toString(Map<Tac, Temp> set) {
-		StringBuilder sb = new StringBuilder("[ ");
-		for (Map.Entry<Tac, Temp> t : set.entrySet()) {
-			sb.append(t.getValue().name + " ");
-		}
-		sb.append(']');
-		return sb.toString();
 	}
 
 	public String toString(Set<Temp> set) {

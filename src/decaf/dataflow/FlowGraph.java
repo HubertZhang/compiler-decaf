@@ -183,9 +183,7 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				for (int i = 0; i < 2; i++) {
 					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
 				}
-				for (Map.Entry<Tac, Temp> t : bb.def.entrySet()) {
-					bb.liveOut.remove(t.getValue());
-				}
+				bb.liveOut.removeAll(bb.setDef);
 				if (bb.liveIn.addAll (bb.liveOut))
 					changed = true;
 				for (int i = 0; i < 2; i++) {
