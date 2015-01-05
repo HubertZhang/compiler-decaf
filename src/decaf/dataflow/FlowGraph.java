@@ -180,30 +180,27 @@ public class FlowGraph implements Iterable<BasicBlock> {
 			changed = false;
 			for (BasicBlock bb: bbs) {
 				for (int i = 0; i < 2; i++) {
+					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
 					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 				}
-//				bb.LiveOut.removeAll(bb.def);
-				Set<Temp> tempDef = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+				bb.liveOut.removeAll(bb.def);
 				Set<Map.Entry<Tac,Temp>> tempSet = new TreeSet<Map.Entry<Tac,Temp>>(BasicBlock.TAC_ID_COMPARATOR);
-				for (Map.Entry<Tac, Temp> t : bb.def) {
-					tempDef.add(t.getValue());
-				}
 				for (Map.Entry<Tac, Temp> t : bb.LiveOut) {
-					if (tempDef.contains(t.getValue())) {
+					if (bb.def.contains(t.getValue())) {
 						tempSet.add(t);
 					}
 				}
 				bb.LiveOut.removeAll(tempSet);
 				if (bb.LiveIn.addAll (bb.LiveOut))
 					changed = true;
+				if (bb.liveIn.addAll (bb.liveOut))
+					changed = true;
 				for (int i = 0; i < 2; i++) {
 					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
+					bb.liveOut.addAll (bbs.get(bb.next[i]).liveIn);
 				}
 			}
 		} while (changed);
-		for (BasicBlock bb: bbs) {
-			bb.convertTempSet();
-		}
 	}
 
 	public void simplify() {

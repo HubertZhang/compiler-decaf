@@ -36,15 +36,17 @@ public class BasicBlock {
 
 	public boolean mark;
 
-	public Set<Map.Entry<Tac, Temp>> def;
-
-	public Set<Map.Entry<Tac, Temp>> liveUse;
+	public Set<Map.Entry<Tac, Temp>> LiveUse;
 
 	public Set<Map.Entry<Tac, Temp>> LiveIn;
 
 	public Set<Map.Entry<Tac, Temp>> LiveOut;
 
+	public Set<Temp> def;
+
 	public Set<Temp> liveIn;
+
+	public Set<Temp> liveUse;
 
 	public Set<Temp> liveOut;
 
@@ -70,8 +72,11 @@ public class BasicBlock {
 	};
 
 	public BasicBlock() {
-		def = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
-		liveUse = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
+		def = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		liveUse = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		liveIn = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		liveOut = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+		LiveUse = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
 		LiveIn = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
 		LiveOut = new TreeSet<Map.Entry<Tac, Temp>>(TAC_ID_COMPARATOR);
 		next = new int[2];
@@ -96,15 +101,17 @@ public class BasicBlock {
 			case LES:
 				/* use op1 and op2, def op0 */
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
+					liveUse.add(tac.op1);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				if (tac.op2.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op2));
+					liveUse.add(tac.op2);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op2));
 					tac.op2.lastVisitedBB = bbNum;
 				}
 				if (tac.op0.lastVisitedBB != bbNum) {
-					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
+					def.add(tac.op0);
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -115,12 +122,13 @@ public class BasicBlock {
 			case LOAD:
 				/* use op1, def op0 */
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
+					liveUse.add(tac.op1);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				if (tac.op0 != null && tac.op0.lastVisitedBB != bbNum) {  // in INDIRECT_CALL with return type VOID,
 					// tac.op0 is null
-					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
+					def.add(tac.op0);
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -132,25 +140,28 @@ public class BasicBlock {
 				/* def op0 */
 				if (tac.op0 != null && tac.op0.lastVisitedBB != bbNum) {  // in DIRECT_CALL with return type VOID,
 					// tac.op0 is null
-					def.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
+					def.add(tac.op0);
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
 			case STORE:
 				/* use op0 and op1*/
 				if (tac.op0.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
+					liveUse.add(tac.op0);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				if (tac.op1.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
+					liveUse.add(tac.op1);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op1));
 					tac.op1.lastVisitedBB = bbNum;
 				}
 				break;
 			case PARM:
 				/* use op0 */
 				if (tac.op0.lastVisitedBB != bbNum) {
-					liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
+					liveUse.add(tac.op0);
+					LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(tac, tac.op0));
 					tac.op0.lastVisitedBB = bbNum;
 				}
 				break;
@@ -160,10 +171,12 @@ public class BasicBlock {
 			}
 		}
 		if (var != null && var.lastVisitedBB != bbNum) {
-			liveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(varTac, var));
+			liveUse.add(var);
+			LiveUse.add(new AbstractMap.SimpleEntry<Tac, Temp>(varTac, var));
 			var.lastVisitedBB = bbNum;
 		}
-		LiveIn.addAll(liveUse);
+		liveIn.addAll(liveUse);
+		LiveIn.addAll(LiveUse);
 	}
 
 	public void analyzeLiveness() {
@@ -344,11 +357,11 @@ public class BasicBlock {
 		pw.println("BASIC BLOCK " + bbNum + " : ");
 		pw.println("  Def     = " + toString(def));
 		pw.println("  liveUse = " + toString(liveUse));
-		pw.println("  liveIn  = " + toString(LiveIn));
-		pw.println("  liveOut = " + toString(LiveOut));
+		pw.println("  liveIn  = " + toString(liveIn));
+		pw.println("  liveOut = " + toString(liveOut));
 
 		for (Tac t = tacList; t != null; t = t.next) {
-			pw.println("    " + t + " " + oriToString(t.liveOut));
+			pw.println("    " + t + " " + toString(t.liveOut));
 		}
 
 		switch (endKind) {
@@ -375,6 +388,10 @@ public class BasicBlock {
 
 	public void printDUTo(PrintWriter pw) {
 		pw.println("BASIC BLOCK " + bbNum + " : ");
+		pw.println("  Def     = " + toString(def));
+		pw.println("  liveUse = " + toString(liveUse));
+		pw.println("  liveIn  = " + toString(liveIn));
+		pw.println("  liveOut = " + toString(liveOut));
 		for (Tac t = tacList; t != null; t = t.next) {
 			StringBuilder DU = new StringBuilder("[ ");
 			if (t.useChaining != null) {
@@ -383,19 +400,39 @@ public class BasicBlock {
 				}
 			}
 			DU.append(']');
-			pw.println("    " + String.format("%d-%d", t.bbNum, t.getLineNumber()) + " " + t +" "+ DU.toString());
+			pw.println("    " + String.format("%d-%d", t.bbNum, t.getLineNumber()) + " " + t +" " + toString(t.liveOut) +" "+ DU.toString());
+		}
+		switch (endKind) {
+			case BY_BRANCH:
+				pw.println("END BY BRANCH, goto " + next[0]);
+				break;
+			case BY_BEQZ:
+				pw.println("END BY BEQZ, if " + var.name + " = ");
+				pw.println("    0 : goto " + next[0] + "; 1 : goto " + next[1]);
+				break;
+			case BY_BNEZ:
+				pw.println("END BY BGTZ, if " + var.name + " = ");
+				pw.println("    1 : goto " + next[0] + "; 0 : goto " + next[1]);
+				break;
+			case BY_RETURN:
+				if (var != null) {
+					pw.println("END BY RETURN, result = " + var.name);
+				} else {
+					pw.println("END BY RETURN, void result");
+				}
+				break;
 		}
 	}
 
-	public String toString(Set<Map.Entry<Tac, Temp>> set) {
-		Set<Temp> tempSet = new TreeSet<Temp>(Temp.ID_COMPARATOR);
-		for (Map.Entry<Tac, Temp> t : set) {
-			tempSet.add(t.getValue());
-		}
-		return oriToString(tempSet);
-	}
+//	public String toString(Set<Map.Entry<Tac, Temp>> set) {
+//		Set<Temp> tempSet = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+//		for (Map.Entry<Tac, Temp> t : set) {
+//			tempSet.add(t.getValue());
+//		}
+//		return oriToString(tempSet);
+//	}
 
-	public String oriToString(Set<Temp> set) {
+	public String toString(Set<Temp> set) {
 		StringBuilder sb = new StringBuilder("[ ");
 		for (Temp t : set) {
 			sb.append(t.name + " ");
