@@ -50,6 +50,11 @@ if __name__ == '__main__':
 				stdout = open(os.path.join('output',bname+'.s'), 'w'),
 				stderr = subprocess.STDOUT)
 
+		cmd = ['java', '-jar', decaf_jar, '-l', '5', name]
+		code = subprocess.call(cmd,
+				stdout = open(os.path.join('output',bname+'.du'), 'w'),
+				stderr = subprocess.STDOUT)
+
 		if name == 'blackjack.decaf':
 			continue
 
@@ -78,6 +83,16 @@ if __name__ == '__main__':
 				info = 'OK :)'
 			else:
 				info = 'ERROR!'
+		try:
+			reference = read_txt_file(os.path.join('result',bname+'.dout'))
+			our_result = read_txt_file(os.path.join('output',bname+'.dout'))
+		except IOError:
+			info = 'What the hell??'
+		else:
+			if reference == our_result:
+				info += ' OK :)'
+			else:
+				info += ' ERROR!'
 		print ('{0:<20}{1}'.format(name,info))
 	if os.name == 'nt':
 		print ('Press Enter to continue...')
