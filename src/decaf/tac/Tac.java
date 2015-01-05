@@ -40,6 +40,8 @@ public class Tac {
 
 	public Set<Temp> saves;
 
+	public Set<Tac> useChaining;
+
 	private Tac(Kind opc, Temp op0) {
 		this(opc, op0, null, null);
 	}
@@ -319,7 +321,7 @@ public class Tac {
 			return lineNumber;
 		} else {
 			if (this.prev == null) {
-				lineNumber = 0;
+				lineNumber = 1;
 				return lineNumber;
 			} else {
 				lineNumber = this.prev.getLineNumber() + 1;

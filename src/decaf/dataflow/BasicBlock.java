@@ -56,10 +56,14 @@ public class BasicBlock {
 
 		@Override
 		public int compare(Map.Entry<Tac, Temp> o1, Map.Entry<Tac, Temp> o2) {
-			if (o1.getKey().getLineNumber() == o2.getKey().getLineNumber()) {
-				return o1.getValue().id > o2.getValue().id ? 1 : o1.getValue().id == o2.getValue().id ? 0 : -1;
+			if (o1.getKey().bbNum == o2.getKey().bbNum) {
+				if (o1.getKey().getLineNumber() == o2.getKey().getLineNumber()) {
+					return o1.getValue().id > o2.getValue().id ? 1 : o1.getValue().id == o2.getValue().id ? 0 : -1;
+				} else {
+					return o1.getKey().getLineNumber() > o2.getKey().getLineNumber() ? 1 : -1;
+				}
 			} else {
-				return o1.getKey().getLineNumber() > o2.getKey().getLineNumber() ? 1 : -1;
+				return o1.getKey().bbNum > o2.getKey().bbNum ? 1 : -1;
 			}
 		}
 
@@ -228,7 +232,85 @@ public class BasicBlock {
 	}
 
 	public void analyzeDU() {
-		
+		if (tacList == null)
+			return;
+		Map<Temp, Tac> currentDU = new HashMap<Temp, Tac>();
+		for (Tac tac = tacList;tac != null; tac = tac.next) {
+			switch (tac.opc) {
+				case ADD:
+				case SUB:
+				case MUL:
+				case DIV:
+				case MOD:
+				case LAND:
+				case LOR:
+				case GTR:
+				case GEQ:
+				case EQU:
+				case NEQ:
+				case LEQ:
+				case LES:
+				/* use op1 and op2, def op0 */
+					if (currentDU.containsKey(tac.op1)) {
+						currentDU.get(tac.op1).useChaining.add(tac);
+					}
+					if (currentDU.containsKey(tac.op2)) {
+						currentDU.get(tac.op2).useChaining.add(tac);
+					}
+					tac.useChaining = new HashSet<Tac>();
+					currentDU.put(tac.op0, tac);
+					break;
+				case NEG:
+				case LNOT:
+				case ASSIGN:
+				case INDIRECT_CALL:
+				case LOAD:
+				/* use op1, def op0 */
+					if (currentDU.containsKey(tac.op1)) {
+						currentDU.get(tac.op1).useChaining.add(tac);
+					}
+					tac.useChaining = new HashSet<Tac>();
+					currentDU.put(tac.op0, tac);
+					break;
+				case LOAD_VTBL:
+				case DIRECT_CALL:
+				case RETURN:
+				case LOAD_STR_CONST:
+				case LOAD_IMM4:
+				/* def op0 */
+					tac.useChaining = new HashSet<Tac>();
+					currentDU.put(tac.op0, tac);
+					break;
+				case STORE:
+				/* use op0 and op1*/
+					if (currentDU.containsKey(tac.op0)) {
+						currentDU.get(tac.op0).useChaining.add(tac);
+					}
+					if (currentDU.containsKey(tac.op1)) {
+						currentDU.get(tac.op1).useChaining.add(tac);
+					}
+					break;
+				case BEQZ:
+				case BNEZ:
+				case PARM:
+				/* use op0 */
+					if (currentDU.containsKey(tac.op0)) {
+						currentDU.get(tac.op0).useChaining.add(tac);
+					}
+					break;
+				default:
+				/* BRANCH MEMO MARK PARM*/
+					break;
+			}
+		}
+		for (Map.Entry<Tac, Temp> t : LiveOut) {
+			if (currentDU.containsKey(t.getValue())) {
+				currentDU.get(t.getValue()).useChaining.add(t.getKey());
+			}
+			else {
+
+			}
+		}
 	}
 
 	public void printTo(PrintWriter pw) {
@@ -292,16 +374,25 @@ public class BasicBlock {
 	}
 
 	public void printDUTo(PrintWriter pw) {
-
+		pw.println("BASIC BLOCK " + bbNum + " : ");
+		for (Tac t = tacList; t != null; t = t.next) {
+			StringBuilder DU = new StringBuilder("[ ");
+			if (t.useChaining != null) {
+				for (Tac du : t.useChaining) {
+					DU.append(String.format("%d-%d", du.bbNum, du.getLineNumber()) + " ");
+				}
+			}
+			DU.append(']');
+			pw.println("    " + String.format("%d-%d", t.bbNum, t.getLineNumber()) + " " + t +" "+ DU.toString());
+		}
 	}
 
 	public String toString(Set<Map.Entry<Tac, Temp>> set) {
-		StringBuilder sb = new StringBuilder("[ ");
+		Set<Temp> tempSet = new TreeSet<Temp>(Temp.ID_COMPARATOR);
 		for (Map.Entry<Tac, Temp> t : set) {
-			sb.append(t.getValue().name + " ");
+			tempSet.add(t.getValue());
 		}
-		sb.append(']');
-		return sb.toString();
+		return oriToString(tempSet);
 	}
 
 	public String oriToString(Set<Temp> set) {

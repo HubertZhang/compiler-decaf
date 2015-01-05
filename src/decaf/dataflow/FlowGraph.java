@@ -1,15 +1,12 @@
 package decaf.dataflow;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import decaf.tac.Functy;
 import decaf.tac.Tac;
 import decaf.tac.Tac.Kind;
+import decaf.tac.Temp;
 
 public class FlowGraph implements Iterable<BasicBlock> {
 
@@ -27,6 +24,9 @@ public class FlowGraph implements Iterable<BasicBlock> {
 		analyzeLiveness();
 		for (BasicBlock bb : bbs) {
 			bb.analyzeLiveness();
+		}
+		for (BasicBlock bb : bbs) {
+			bb.analyzeDU();
 		}
 	}
 
@@ -182,7 +182,18 @@ public class FlowGraph implements Iterable<BasicBlock> {
 				for (int i = 0; i < 2; i++) {
 					bb.LiveOut.addAll (bbs.get(bb.next[i]).LiveIn);
 				}
-				bb.LiveOut.removeAll(bb.def);
+//				bb.LiveOut.removeAll(bb.def);
+				Set<Temp> tempDef = new TreeSet<Temp>(Temp.ID_COMPARATOR);
+				Set<Map.Entry<Tac,Temp>> tempSet = new TreeSet<Map.Entry<Tac,Temp>>(BasicBlock.TAC_ID_COMPARATOR);
+				for (Map.Entry<Tac, Temp> t : bb.def) {
+					tempDef.add(t.getValue());
+				}
+				for (Map.Entry<Tac, Temp> t : bb.LiveOut) {
+					if (tempDef.contains(t.getValue())) {
+						tempSet.add(t);
+					}
+				}
+				bb.LiveOut.removeAll(tempSet);
 				if (bb.LiveIn.addAll (bb.LiveOut))
 					changed = true;
 				for (int i = 0; i < 2; i++) {

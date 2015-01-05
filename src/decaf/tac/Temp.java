@@ -3,6 +3,7 @@ package decaf.tac;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import decaf.machdesc.Register;
 import decaf.symbol.Variable;
